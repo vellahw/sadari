@@ -4,7 +4,7 @@ import '../css/layout/Header.css';
 
 function Header() {
   return (
-    <nav>
+    <nav className='flex-center'>
       <Link to={'/'} className='logo'>sadari</Link>
     </nav>
   );

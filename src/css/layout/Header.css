@@ -1,9 +1,11 @@
 nav {
   width: 100%;
   padding: 25px 0;
+  z-index: 99;
 }
 
 .logo {
   font-size: 19px;
   font-family: 'KronaOne';
+  z-index: 99;
 }

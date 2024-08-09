@@ -1,7 +1,7 @@
 :root {
   --color-black: #343434;
   --color-gray100: #e6e6e6;
-  --color-brown: #524747;
+  --color-text: #524747;
 }
 
 @font-face {
@@ -39,20 +39,6 @@ p {
   letter-spacing: -1px;
 }
 
-body {
-  color: var(--color-black);
-  font-family: 'pretendard-rg';
-}
-
-input,
-button {
-  border: none;
-}
-
-button{
-  background: none;
-}
-
 input,
 select,
 option {
@@ -69,6 +55,11 @@ select:focus,
 textarea:focus {
   outline: none;
   border: none !important;
+}
+
+#root {
+  overflow-y: hidden;
+  height: 100vh;
 }
 
 .font-bd {
@@ -127,6 +118,10 @@ textarea:focus {
     height: 100%;
     object-fit: cover;
   }
+}
+
+.w-100 {
+  width: 100%;
 }
 
 .wh-100 {

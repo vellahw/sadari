@@ -5,7 +5,9 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background: #fff
+  background: #fff;
+  color: var(--color-black);
+  font-family: 'pretendard-rg';
 }
 
 html,
@@ -78,7 +80,8 @@ input,
 button {
   margin: 0;
   padding: 0;
-  font-size: 1em
+  font-size: 1em;
+  border: none;
 }
 
 input[type="submit"] {
@@ -86,7 +89,8 @@ input[type="submit"] {
 }
 
 button {
-  cursor: pointer
+  background: none;
+  cursor: pointer;
 }
 
 textarea,
