@@ -18,6 +18,7 @@ import org.our.sadari.feed.mapper.FeedMapper;
 import org.our.sadari.global.common.constant.Constant;
 import org.our.sadari.global.common.dto.PageDto;
 import org.our.sadari.global.common.result.ResultData;
+import org.our.sadari.report.service.ReportTranslationService;
 
 /**
  * fileName       : FeedServiceImplTest
@@ -36,6 +37,10 @@ class FeedServiceImplTest {
     @Mock
     private FeedMapper feedMapper;
 
+    // 공개 독후감 번역 가능 여부 처리 서비스
+    @Mock
+    private ReportTranslationService reportTranslationService;
+
     // 본인과 팔로잉 피드 조회 단위 테스트 대상
     private FeedServiceImpl feedService;
 
@@ -47,7 +52,7 @@ class FeedServiceImplTest {
     @BeforeEach
     void setUp() {
         // 피드 조회 단위 테스트 대상을 생성함
-        feedService = new FeedServiceImpl(feedMapper);
+        feedService = new FeedServiceImpl(feedMapper, reportTranslationService);
     }
 
     /**

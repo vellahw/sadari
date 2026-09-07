@@ -29,6 +29,8 @@
 | `KAKAO_REST_API_KEY` | Kakao 로그인과 도서 검색 API에 함께 사용하는 REST API 키 |
 | `KAKAO_JAVASCRIPT_KEY` | Kakao JavaScript 키 |
 | `KAKAO_NATIVE_APP_KEY` | Kakao Native App 키. 사용하지 않으면 빈 값 가능 |
+| `GOOGLE_TRANSLATION_API_KEY` | Cloud Translation API 전용 키. Google Cloud 키 이름은 `sadari-translation-server` |
+| `GOOGLE_BOOKS_API_KEY` | Books API 전용 키. Google Cloud 키 이름은 `sadari-books-server` |
 | `FIREBASE_WEB_API_KEY` | Firebase Web App의 `apiKey` |
 | `FIREBASE_WEB_AUTH_DOMAIN` | Firebase Web App의 `authDomain` |
 | `FIREBASE_WEB_PROJECT_ID` | Firebase Web App의 `projectId` |
@@ -123,6 +125,9 @@
   GitHub Actions Secret으로 전달합니다.
 - 로컬과 운영의 `book.search.url`은 종료된 네이버 도서 API의 대체 공급자인 카카오 도서 검색
   `https://dapi.kakao.com/v3/search/book`으로 고정하며 인증에는 기존 `KAKAO_REST_API_KEY` Secret을 사용합니다.
+- Google 번역은 `GOOGLE_TRANSLATION_API_KEY`가 있을 때 활성화하고, 키가 없으면 기존 번역 캐시만 표시하며 신규 번역 버튼은 숨깁니다. Google 도서 검색 연동 전까지 `GOOGLE_BOOKS_API_KEY`는 빈 값이어도 실행할 수 있습니다.
+- Google Cloud Console의 `API 및 서비스 > 사용자 인증 정보`에서 `sadari-translation-server` 값은 `GOOGLE_TRANSLATION_API_KEY`, `sadari-books-server` 값은 `GOOGLE_BOOKS_API_KEY`에 각각 등록합니다.
+- Google 번역은 Cloud Translation Basic v2 서버 주소를 사용하고 앱 전체 월간 신규 번역을 500,000 유니코드 코드 포인트로 고정합니다. 월간 경계는 Google 쿼터 기준 시간대와 맞추며, Redis에서 사용량을 확인할 수 없으면 신규 Google 호출을 중단합니다.
 - 운영 도서 검색은 요청당 최대 50권을 조회하며 캐시 적중 300회·미적중 60회의 회원별 60초 제한, 회원별 일간 제한, 앱 전체 실제 호출 제한과 10분 공용 캐시를 Redis에서 관리합니다.
 - 도서 인기 검색어는 최근 7일의 일별 Redis 점수를 합산하고 동일 회원의 같은 검색어를 기간 내 한 번만 반영하며 최소 3명 이상인 상위 10건을 제공합니다.
 - 운영의 `book.search.popular-keyword-user-dedup-enabled`는 순위 조작 방지를 위해 `true`로 고정하며 환경변수로 노출하지 않습니다.

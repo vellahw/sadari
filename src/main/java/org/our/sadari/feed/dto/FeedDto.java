@@ -1,5 +1,6 @@
 package org.our.sadari.feed.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ import org.our.sadari.global.file.util.FileUrlUtil;
  * 2026-08-26        SeungHyeon.Kang         화면용 이미지 경로·주석 정비
  * 2026-08-27        SeungHyeon.Kang         알림 대상 단건 조회 조건 확장
  * 2026-08-28        HanWon.Jang             본인 피드 식별값 추가
+ * 2026-09-07        HanWon.Jang             독후감 번역 표시 정보 추가
  */
 @Data
 @Schema(description = "본인과 팔로잉 피드 항목 DTO")
@@ -50,6 +52,16 @@ public class FeedDto {
 
     @Schema(description = "독후감 번호")
     private Long reptNumb;
+
+    @Schema(description = "독후감 작성 언어 코드", example = "ko", allowableValues = {"ko", "en"})
+    private String langCode;
+
+    @JsonIgnore
+    @Schema(hidden = true)
+    private String trnsCacheYsno;
+
+    @Schema(description = "현재 표시 언어 번역 보기 가능 여부", example = "Y", allowableValues = {"Y", "N"})
+    private String trnsAvaiYsno;
 
     @Schema(description = "독서 상태 코드", allowableValues = {"READ", "DONE", "STOP"})
     private String reptStat;

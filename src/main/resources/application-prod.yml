@@ -77,6 +77,16 @@ book:
     # 검색 화면의 세로 슬라이더에 전달할 인기 검색어 최대 건수임
     popular-keyword-max-size: ${BOOK_SEARCH_POPULAR_KEYWORD_MAX_SIZE:10}
 
+google:
+  translation:
+    # Cloud Translation Basic v2 서버 호출 주소와 앱 전체 월간 무료 사용 보호 기준임
+    url: https://translation.googleapis.com/language/translate/v2
+    api-key: ${GOOGLE_TRANSLATION_API_KEY:}
+    monthly-character-limit: 500000
+    quota-zone: America/Los_Angeles
+  books:
+    api-key: ${GOOGLE_BOOKS_API_KEY:}
+
 firebase:
   web:
     # 브라우저 Push 구독에 쓰는 VAPID public key임. public key지만 환경별 교체를 위해 환경변수로 관리함

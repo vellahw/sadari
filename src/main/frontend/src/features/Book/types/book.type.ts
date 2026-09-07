@@ -179,6 +179,8 @@ export interface AddBookResponse {
 // 공개된 독후감 타입
 export interface PublicReportType {
   reptNumb: number;
+  langCode?: "ko" | "en";
+  trnsAvaiYsno?: "Y" | "N";
   userNumb: number;
   userNick: string;
   porfPath?: string;

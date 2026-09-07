@@ -37,6 +37,13 @@ export type ExistingReportByIsbn = {
   bookIsbn: string;
 };
 
+export type ReportTranslation = {
+  reptNumb: number;
+  langCode: "ko" | "en";
+  trnsCntn: string;
+  cached: boolean;
+};
+
 /**
  * 신뢰된 도서 검색 표지 대표색과 가장 가까운 책장 색상 코드를 조회함
  *
@@ -126,6 +133,25 @@ export const getPublicReportTargetApi = async (
     `/book/publicReports/${reptNumb}`,
   );
   return assertResultDataSuccess(res.data);
+};
+
+/**
+ * 공개 독후감을 현재 사용자 표시 언어로 번역하고 서버 캐시를 재사용함
+ *
+ * @author HanWon.Jang
+ * @param reptNumb 번역할 공개 독후감 번호
+ * @return 번역문과 캐시 사용 여부
+ * @throws API 요청 또는 공통 응답 검증 실패 시 발생
+ */
+export const setReportTranslationApi = async (
+  reptNumb: number,
+): Promise<ReportTranslation> => {
+  // 공개 범위와 월간 사용량을 서버에서 다시 검증하는 번역 요청을 전송함
+  const response = await api.post<ResultData<ReportTranslation>>(
+    `/book/translations/${reptNumb}`,
+  );
+  // 공통 성공 응답으로 검증된 번역 데이터만 화면에 반환함
+  return assertResultDataSuccess(response.data).data as ReportTranslation;
 };
 
 /**

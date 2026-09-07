@@ -1,6 +1,11 @@
 -- 관리자 사용자 통계의 기간 조건과 그룹 집계를 지원하는 운영 인덱스를 추가함
 -- 이 스크립트는 기존 운영 스키마에 한 번만 적용함
 
+-- 동일 ISBN의 한국어와 영어 도서 정보를 각각 한 건만 저장하도록 보장함
+ALTER TABLE `TM_BKINFO`
+    DROP INDEX `UK_TM_BKINFO_ISBN`,
+    ADD UNIQUE INDEX `UK_TM_BKINFO_ISBN_LANG` (`BOOK_ISBN`, `LANG_CODE`);
+
 ALTER TABLE `TM_USERXM`
     ADD INDEX `IX_TM_USERXM_JOIN` (`JOIN_DATE`, `USER_NUMB`),
     ADD INDEX `IX_TM_USERXM_PROF_FEED` (`USER_STAT`, `PROF_DATE` DESC, `USER_NUMB`),

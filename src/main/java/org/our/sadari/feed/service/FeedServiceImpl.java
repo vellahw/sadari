@@ -10,6 +10,7 @@ import org.our.sadari.global.common.dto.PageDto;
 import org.our.sadari.global.common.result.ResultData;
 import org.our.sadari.global.common.result.ResultEnum;
 import org.our.sadari.global.common.util.StringUtil;
+import org.our.sadari.report.service.ReportTranslationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2026-08-25        SeungHyeon.Kang         최초 생성
  * 2026-08-26        SeungHyeon.Kang         주석 규칙 정비
  * 2026-08-27        SeungHyeon.Kang         본인 피드와 알림 대상 단건 조회 추가
+ * 2026-09-07        HanWon.Jang              독후감 번역 가능 여부 반영
  */
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,8 @@ public class FeedServiceImpl implements FeedService {
 
     // 피드 목록과 교류 집계 데이터 접근 객체
     private final FeedMapper feedMapper;
+    // 공개 독후감 번역 가능 여부 처리 서비스
+    private final ReportTranslationService reportTranslationService;
 
     /**
      * 로그인 사용자 본인과 팔로우하는 활성 사용자의 공개 활동 피드를 페이지 단위로 조회함
@@ -78,6 +82,8 @@ public class FeedServiceImpl implements FeedService {
         List<FeedDto> visibleList = hasNext
                 ? new ArrayList<>(result.subList(0, FEED_PAGE_SIZE))
                 : result;
+        // 현재 표시 언어와 월간 잔여량 및 캐시 상태로 독후감 피드의 번역 버튼 노출 여부를 설정함
+        reportTranslationService.applyFeedAvailability(visibleList);
 
         // 화면 표시 목록과 현재 페이지 및 다음 페이지 여부를 공통 페이지 응답으로 반환함
         return ResultData.success(new PageDto<>(visibleList, safePage, hasNext));
@@ -128,6 +134,8 @@ public class FeedServiceImpl implements FeedService {
             return ResultData.fail(ResultEnum.COMMON_NO_DATA);
         }
 
+        // 알림 직접 진입 카드에도 목록과 같은 번역 버튼 노출 정책을 적용함
+        reportTranslationService.applyFeedAvailability(result);
         // 알림 링크가 지정한 첫 번째 피드 항목을 반환함
         return ResultData.success(result.get(0));
     }

@@ -7,6 +7,7 @@ import org.our.sadari.myPage.dto.ReadingGoalDto;
 import org.our.sadari.myPage.dto.ReadingSummaryQueryDto;
 import org.our.sadari.report.dto.ReportAlimDto;
 import org.our.sadari.report.dto.ReportDto;
+import org.our.sadari.report.dto.ReportTranslationDto;
 import org.our.sadari.social.dto.SocialDto;
 
 /**
@@ -22,6 +23,7 @@ import org.our.sadari.social.dto.SocialDto;
  * 2026-08-04        SeungHyeon.Kang       독서 요약 공개 범위 조회 조건 문서화
  * 2026-08-14        SeungHyeon.Kang    독후감 관계 정리·정렬 추가
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 조회·변경 추가
+ * 2026-09-07        HanWon.Jang        독후감 번역 캐시 조회·저장 추가
  */
 @Mapper
 public interface ReportMapper {
@@ -109,6 +111,33 @@ public interface ReportMapper {
 
     /** 알림이 지정한 공개 독후감 한 건과 도서 정보를 조회함 */
     ReportDto getPublicReportTarget(ReportDto req);
+
+    /**
+     * 공개 범위와 차단 관계를 검증한 독후감 원문을 잠금 조회함
+     *
+     * @author HanWon.Jang
+     * @param req 로그인 사용자 번호와 독후감 번호
+     * @return 번역 가능한 독후감 원문
+     */
+    ReportTranslationDto getReportTrnsSource(ReportTranslationDto req);
+
+    /**
+     * 독후감 번호와 대상 언어에 해당하는 번역 캐시를 조회함
+     *
+     * @author HanWon.Jang
+     * @param req 독후감 번호와 번역 대상 언어
+     * @return 저장된 번역 캐시
+     */
+    ReportTranslationDto getReportTrnsDtl(ReportTranslationDto req);
+
+    /**
+     * 독후감과 대상 언어별 번역 캐시를 신규 저장하거나 원문 변경 내용으로 갱신함
+     *
+     * @author HanWon.Jang
+     * @param req 독후감 번호와 대상 언어 및 번역 결과
+     * @return 반영 건수
+     */
+    int setReportTrns(ReportTranslationDto req);
 
     /**
      * ISBN 기준으로 연결된 완료 또는 중단 독후감의 평균 별점을 조회함

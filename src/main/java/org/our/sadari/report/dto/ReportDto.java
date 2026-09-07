@@ -1,5 +1,6 @@
 package org.our.sadari.report.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -24,6 +25,7 @@ import org.our.sadari.book.dto.BookDto;
  * 2026-08-20        SeungHyeon.Kang    책장 색상 기본값 검증 순서 정비
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 응답 추가
  * 2026-08-31        HanWon.Jang        모임 독서 기간 중 시작일 수정 잠금 응답 추가
+ * 2026-09-07        HanWon.Jang        독후감 번역 표시 정보 추가
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -35,6 +37,16 @@ public class ReportDto extends BookDto {
 
     @Schema(description = "독후감 번호", example = "1")
     private Long reptNumb;
+
+    @Schema(description = "독후감 작성 언어 코드", example = "ko", allowableValues = {"ko", "en"})
+    private String langCode;
+
+    @JsonIgnore
+    @Schema(hidden = true)
+    private String trnsCacheYsno;
+
+    @Schema(description = "현재 표시 언어 번역 보기 가능 여부", example = "Y", allowableValues = {"Y", "N"})
+    private String trnsAvaiYsno;
 
     @Schema(description = "독서 상태 코드", example = "DONE", allowableValues = {"READ", "DONE", "STOP"})
     @NotBlank

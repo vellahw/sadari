@@ -13,6 +13,7 @@ import org.our.sadari.global.common.result.ResultEnum;
 import org.our.sadari.report.dto.ReportAlimDto;
 import org.our.sadari.report.dto.ReportDto;
 import org.our.sadari.report.service.ReportService;
+import org.our.sadari.report.service.ReportTranslationService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 2026-08-14        SeungHyeon.Kang    공개 독후감 팔로우 작성자 우선 조회 API 반영
  * 2026-08-15        SeungHyeon.Kang    공개 독후감 조회·정렬 API
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 API 추가
+ * 2026-09-07        HanWon.Jang        공개 독후감 번역 API 추가
  */
 @Slf4j
 @RestController
@@ -48,6 +50,8 @@ public class ReportController {
 
     // Report 업무 처리 서비스
     private final ReportService reportService;
+    // 독후감 번역 업무 처리 서비스
+    private final ReportTranslationService reportTranslationService;
 
     /**
      * 로그인 사용자의 독후감 목록을 검색어와 정렬 조건에 따라 조회함
@@ -136,6 +140,23 @@ public class ReportController {
     public ResultData getPublicReportTarget(@Parameter(hidden = true) @AuthenticationPrincipal Long userNumb
                                           , @PathVariable Long reptNumb) {
         return reportService.getPublicReportTarget(userNumb, reptNumb);
+    }
+
+    /**
+     * 공개 독후감을 현재 사용자 표시 언어로 번역하고 결과를 재사용 캐시에 저장함
+     *
+     * @author HanWon.Jang
+     * @param userNumb Spring Security에서 주입한 로그인 사용자 번호
+     * @param reptNumb 번역할 공개 독후감 번호
+     * @return 번역문과 캐시 사용 여부
+     */
+    @PostMapping("/translations/{reptNumb}")
+    @Operation(summary = "공개 독후감 번역", description = "공개 독후감을 현재 표시 언어로 번역하고 같은 원문 번역을 재사용한다.")
+    public ResultData setReportTranslation(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userNumb,
+            @Parameter(description = "번역할 공개 독후감 번호", example = "1") @PathVariable Long reptNumb) {
+        // 공개 범위와 월간 사용량을 서버에서 다시 확인한 번역 결과를 반환함
+        return reportTranslationService.setReportTranslation(userNumb, reptNumb);
     }
 
     /**

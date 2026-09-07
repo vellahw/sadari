@@ -76,6 +76,10 @@ class ReportServiceImplTest {
     @Mock
     private BadWordDetectionService badWordDetectionService;
 
+    // 공개 독후감 번역 가능 여부 처리 서비스
+    @Mock
+    private ReportTranslationService reportTranslationService;
+
     // 독서 요약 서비스 단위 테스트 대상
     private ReportServiceImpl reportService;
 
@@ -88,7 +92,8 @@ class ReportServiceImplTest {
     void setUp() {
         // 독서 요약 서비스 단위 테스트 대상을 생성함
         reportService = new ReportServiceImpl(
-                reportMapper, socialMapper, bookMapper, userMapper, codeUtil, badWordDetectionService);
+                reportMapper, socialMapper, bookMapper, userMapper, codeUtil, badWordDetectionService,
+                reportTranslationService);
         // 독서 요약 집계 SQL이 빈 기본 집계 결과를 반환하도록 설정함
         lenient().when(reportMapper.getReadingSummary(any(ReadingSummaryQueryDto.class)))
                 .thenReturn(new ReadingSummaryQueryDto());

@@ -17,6 +17,7 @@
                A.REPT_NUMB
              , A.USER_NUMB
              , A.BOOK_NUMB
+             , A.LANG_CODE
              , A.REPT_STAT
              , FN_GET_CODE_NAME(#{codeReadStat}, A.REPT_STAT, NULL, #{languageCode}) AS REPT_STAT_NAME
              , A.REPT_STDT
@@ -215,6 +216,7 @@
                A.REPT_NUMB
              , A.USER_NUMB
              , A.BOOK_NUMB
+             , A.LANG_CODE
              , A.REPT_STAT
              , A.REPT_STDT
              , A.REPT_ENDT
@@ -334,6 +336,7 @@
              , A.RPAL_YSNO AS REPLY_ALIM_YSNO
              , A.REPT_CNTN
              , SHA2(CONCAT_WS('|'
+                    , COALESCE(A.LANG_CODE, '')
                     , COALESCE(A.REPT_STAT, '')
                     , COALESCE(A.REPT_STDT, '')
                     , COALESCE(A.REPT_ENDT, '')
@@ -438,6 +441,7 @@
              , U.USER_NICK
              , F.FILE_PATH AS PORF_PATH
              , P.BOOK_NUMB
+             , P.LANG_CODE
              , P.REPT_STAT
              , FN_GET_CODE_NAME(#{codeReadStat}, P.REPT_STAT, NULL, #{languageCode}) AS REPT_STAT_NAME
              , P.REPT_GRDE
@@ -447,6 +451,10 @@
              , COALESCE(UL.LIKE_YSNO, #{commNo}) AS LIKE_YSNO
              , COALESCE(RPL.REPL_CNT, 0) AS REPL_CNT
              , CASE WHEN FW.USER_NUMB IS NOT NULL THEN #{commYes} ELSE #{commNo} END AS FOLLOW_YSNO
+             , CASE WHEN T.ORIG_HASH = SHA2(COALESCE(P.REPT_CNTN, ''), 256)
+                         THEN #{commYes}
+                    ELSE #{commNo}
+                END AS TRNS_CACHE_YSNO
         FROM TM_BKINFO B
     INNER JOIN TM_REPORT P
             ON B.BOOK_NUMB = P.BOOK_NUMB
@@ -454,6 +462,9 @@
             ON P.USER_NUMB = U.USER_NUMB
      LEFT JOIN TM_FILEXM F
             ON U.PROF_NUMB = F.FILE_NUMB
+     LEFT JOIN TB_REPTRN T
+            ON T.REPT_NUMB = P.REPT_NUMB
+           AND T.LANG_CODE = #{languageCode}
      LEFT JOIN TB_FOLLOW FW
             ON FW.USER_NUMB = #{userNumb}
            AND FW.FLOW_NUMB = P.USER_NUMB
@@ -563,6 +574,7 @@
              , U.USER_NICK
              , PF.FILE_PATH AS PORF_PATH
              , P.BOOK_NUMB
+             , P.LANG_CODE
              , P.REPT_STAT
              , FN_GET_CODE_NAME(#{codeReadStat}, P.REPT_STAT, NULL, #{languageCode}) AS REPT_STAT_NAME
              , P.REPT_GRDE
@@ -611,11 +623,18 @@
                      WHERE F.USER_NUMB = #{userNumb}
                        AND F.FLOW_NUMB = P.USER_NUMB
                ) THEN #{commYes} ELSE #{commNo} END AS FOLLOW_YSNO
+             , CASE WHEN T.ORIG_HASH = SHA2(COALESCE(P.REPT_CNTN, ''), 256)
+                         THEN #{commYes}
+                    ELSE #{commNo}
+                END AS TRNS_CACHE_YSNO
           FROM TM_REPORT P
           JOIN TM_BKINFO B ON B.BOOK_NUMB = P.BOOK_NUMB
           JOIN TM_USERXM U ON U.USER_NUMB = P.USER_NUMB AND U.USER_STAT = #{userStatActive}
           JOIN TM_USERXM ACTOR ON ACTOR.USER_NUMB = #{userNumb} AND ACTOR.USER_STAT = #{userStatActive}
      LEFT JOIN TM_FILEXM PF ON PF.FILE_NUMB = U.PROF_NUMB
+     LEFT JOIN TB_REPTRN T
+            ON T.REPT_NUMB = P.REPT_NUMB
+           AND T.LANG_CODE = #{languageCode}
          WHERE P.REPT_NUMB = #{reptNumb}
            AND P.PUBC_YSNO = #{commYes}
            AND P.REPT_STAT != #{reptStatRead}
@@ -626,6 +645,69 @@
                    OR (BLOCKX.USER_NUMB = P.USER_NUMB AND BLOCKX.BLOC_NUMB = #{userNumb})
            )
     </select>
+
+    <!-- 공개 범위와 차단 관계를 검증한 독후감 원문을 중복 번역 방지용으로 잠금 조회함 -->
+    <select id="getReportTrnsSource" parameterType="org.our.sadari.report.dto.ReportTranslationDto" resultType="org.our.sadari.report.dto.ReportTranslationDto">
+        <bind name="commYes" value="@org.our.sadari.global.common.constant.Constant@COMM_YES" />
+        <bind name="reptStatRead" value="@org.our.sadari.global.common.constant.Constant@REPORT_STAT_READ" />
+        <bind name="userStatActive" value="@org.our.sadari.global.common.constant.Constant@USER_STAT_ACTIVE" />
+        SELECT /* getReportTrnsSource */
+               P.REPT_NUMB
+             , P.LANG_CODE AS SOURCE_LANG_CODE
+             , P.REPT_CNTN AS SOURCE_CONTENT
+          FROM TM_REPORT P
+    INNER JOIN TM_USERXM U
+            ON U.USER_NUMB = P.USER_NUMB
+           AND U.USER_STAT = #{userStatActive}
+    INNER JOIN TM_USERXM A
+            ON A.USER_NUMB = #{userNumb}
+           AND A.USER_STAT = #{userStatActive}
+         WHERE P.REPT_NUMB = #{reptNumb}
+           AND P.PUBC_YSNO = #{commYes}
+           AND P.REPT_STAT != #{reptStatRead}
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM TB_USBLOC B
+                WHERE (B.USER_NUMB = #{userNumb} AND B.BLOC_NUMB = P.USER_NUMB)
+                   OR (B.USER_NUMB = P.USER_NUMB AND B.BLOC_NUMB = #{userNumb})
+           )
+           FOR UPDATE
+    </select>
+
+    <!-- 독후감 번호와 번역 대상 언어에 해당하는 기존 번역 캐시를 조회함 -->
+    <select id="getReportTrnsDtl" parameterType="org.our.sadari.report.dto.ReportTranslationDto" resultType="org.our.sadari.report.dto.ReportTranslationDto">
+        SELECT /* getReportTrnsDtl */
+               T.REPT_NUMB
+             , T.LANG_CODE
+             , T.ORIG_HASH
+             , T.TRNS_CNTN
+          FROM TB_REPTRN T
+         WHERE T.REPT_NUMB = #{reptNumb}
+           AND T.LANG_CODE = #{langCode}
+    </select>
+
+    <!-- 독후감과 대상 언어별 번역 캐시를 신규 저장하거나 변경된 원문 기준으로 갱신함 -->
+    <insert id="setReportTrns" parameterType="org.our.sadari.report.dto.ReportTranslationDto">
+        /* setReportTrns */
+        INSERT INTO TB_REPTRN (
+                    REPT_NUMB
+                  , LANG_CODE
+                  , ORIG_HASH
+                  , TRNS_CNTN
+                  , REGI_DATE
+                  , UPDT_DATE
+        ) VALUES (  #{reptNumb}
+                  , #{langCode}
+                  , #{origHash}
+                  , #{trnsCntn}
+                  , CURRENT_TIMESTAMP(6)
+                  , CURRENT_TIMESTAMP(6)
+        )
+        ON DUPLICATE KEY UPDATE
+               ORIG_HASH = VALUES(ORIG_HASH)
+             , TRNS_CNTN = VALUES(TRNS_CNTN)
+             , UPDT_DATE = CURRENT_TIMESTAMP(6)
+    </insert>
 
     <!-- ISBN 기준으로 연결된 완료 또는 중단 독후감의 평균 별점을 조회함 -->
     <select id="getPublicRatingAvgByIsbn" resultType="java.math.BigDecimal">
@@ -645,33 +727,35 @@
         INSERT INTO TM_REPORT (
                     USER_NUMB
                   , BOOK_NUMB
+                  , LANG_CODE
                   , REPT_STAT
                   , REPT_STDT
                   , REPT_ENDT
                   , REPT_GRDE
                   , REPT_COLR
+                  , REPT_CNTN
                   , PUBC_YSNO
-                  , PUBC_DATE
                   , LKAL_YSNO
                   , RPAL_YSNO
-                  , REPT_CNTN
+                  , PUBC_DATE
                   , REGI_DATE
                   , UPDT_DATE
         ) VALUES (  #{userNumb}
                   , #{bookNumb}
+                  , #{langCode}
                   , #{reptStat}
                   , #{reptStdt}
                   , #{reptEndt}
                   , #{reptGrde}
                   , #{reptColr}
+                  , #{reptCntn}
                   , #{pubcYsno}
+                  , #{likeAlimYsno}
+                  , #{replyAlimYsno}
                   , CASE WHEN #{pubcYsno} = 'Y' AND #{reptStat} != 'READ'
                               THEN CURRENT_TIMESTAMP(6)
                          ELSE NULL
                     END
-                  , #{likeAlimYsno}
-                  , #{replyAlimYsno}
-                  , #{reptCntn}
                   , CURRENT_TIMESTAMP
                   , CURRENT_TIMESTAMP
         )
@@ -682,7 +766,8 @@
         <bind name="roundReading" value="'READING'" />
         UPDATE /* uptReport */
                TM_REPORT
-           SET REPT_STAT = #{reptStat}
+           SET LANG_CODE = #{langCode}
+             , REPT_STAT = #{reptStat}
              , REPT_STDT = CASE WHEN EXISTS ( SELECT 1
                                                    FROM TB_CLPART PART
                                              INNER JOIN TM_CLRNDX ROUNDX
@@ -698,6 +783,7 @@
              , REPT_ENDT = #{reptEndt}
              , REPT_GRDE = #{reptGrde}
              , REPT_COLR = #{reptColr}
+             , REPT_CNTN = #{reptCntn}
              , PUBC_YSNO = #{pubcYsno}
              , PUBC_DATE = CASE WHEN PUBC_DATE IS NULL
                                       AND #{pubcYsno} = 'Y'
@@ -705,11 +791,11 @@
                                      THEN CURRENT_TIMESTAMP(6)
                                 ELSE PUBC_DATE
                            END
-             , REPT_CNTN = #{reptCntn}
              , UPDT_DATE = CURRENT_TIMESTAMP
          WHERE REPT_NUMB = #{reptNumb}
            AND USER_NUMB = #{userNumb}
            AND SHA2(CONCAT_WS('|'
+                    , COALESCE(LANG_CODE, '')
                     , COALESCE(REPT_STAT, '')
                     , COALESCE(REPT_STDT, '')
                     , COALESCE(REPT_ENDT, '')

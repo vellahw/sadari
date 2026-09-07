@@ -12,7 +12,10 @@ import * as stickyStyles from "@/components/Search/StickySearchBar/StickySearchB
 import { useStickySearch } from "@/components/Search/StickySearchBar/useStickySearch";
 import UserActionMenu from "@/components/UserActionMenu/UserActionMenu";
 import type { SafetyReportTarget } from "@/components/UserActionMenu/userActionMenu.types";
-import { setPublicReportLikeApi } from "@/features/Book/api/bookApi";
+import {
+  setPublicReportLikeApi,
+  setReportTranslationApi,
+} from "@/features/Book/api/bookApi";
 import {
   REPORT_STATUS_DONE,
   REPORT_STATUS_STOP,
@@ -216,6 +219,12 @@ const FeedPage = () => {
   const [replyItem, setReplyItem] = useState<FeedItem | null>(null);
   // 독후감 피드별 본문 펼침 여부를 대상 번호 기준으로 관리함
   const [expandedReports, setExpandedReports] = useState<Record<number, boolean>>({});
+  // 독후감 번호별로 최초 조회한 번역문을 현재 화면에서 재사용함
+  const [translations, setTranslations] = useState<Record<number, string>>({});
+  // 피드 카드별 원문 또는 번역문 표시 상태를 관리함
+  const [translatedReports, setTranslatedReports] = useState<Record<number, boolean>>({});
+  // 같은 화면에서 중복 번역 요청을 막기 위해 처리 중인 독후감 번호를 관리함
+  const [pendingReportNumb, setPendingReportNumb] = useState<number>();
   // 피드 상단 검색 입력에 표시할 닉네임 검색어를 관리함
   const [userKeyword, setUserKeyword] = useState("");
   // 현재 자동 검색 결과에 적용한 닉네임 검색어를 관리함
@@ -878,6 +887,67 @@ const FeedPage = () => {
   };
 
   /**
+   * 번역 캐시를 조회하거나 생성한 뒤 피드의 원문과 번역문 표시 상태를 전환함
+   *
+   * @author HanWon.Jang
+   * @param item 번역 표시 상태를 변경할 독후감 피드
+   * @return 반환값이 없음
+   */
+  const handleTranslation = async (item: FeedItem): Promise<void> => {
+    // 독후감 번호가 없는 사진 피드와 불완전한 응답은 번역 요청에서 제외함
+    if (!item.reptNumb) {
+      return;
+    }
+    // 유효성 검사를 통과한 독후감 번호를 비동기 상태 갱신에서도 같은 값으로 사용함
+    const reptNumb = item.reptNumb;
+
+    // 현재 화면에 번역문이 있으면 외부 요청 없이 원문과 번역문만 전환함
+    if (translations[reptNumb]) {
+      // 선택한 피드 카드의 표시 상태만 반전함
+      setTranslatedReports((current) => ({
+        ...current,
+        [reptNumb]: !current[reptNumb],
+      }));
+      return;
+    }
+
+    // 같은 독후감의 처리 중 요청은 중복 전송하지 않음
+    if (pendingReportNumb === reptNumb) {
+      return;
+    }
+
+    // 번역 요청이 끝날 때까지 선택한 카드의 버튼을 비활성화함
+    setPendingReportNumb(reptNumb);
+
+    try {
+      // 서버가 공개 범위와 월간 한도를 재검증한 번역문을 조회함
+      const translation = await setReportTranslationApi(reptNumb);
+      // 번역문을 독후감 번호 기준으로 저장해 이후 전환에 재사용함
+      setTranslations((current) => ({
+        ...current,
+        [reptNumb]: translation.trnsCntn,
+      }));
+      // 최초 번역 성공 직후 해당 피드 카드에 번역문을 표시함
+      setTranslatedReports((current) => ({ ...current, [reptNumb]: true }));
+    }
+
+    // 서버 실패 응답은 원시 예외 없이 공통 메시지로 안내함
+    catch (translationError) {
+      // 번역 실패 원인을 서버 메시지 또는 공통 재시도 문구로 표시함
+      await sweetError(
+        message("frontend.report.translation.failedTitle"),
+        getApiErrorMessage(translationError, message("frontend.common.tryAgain")),
+      );
+    }
+
+    // 성공과 실패 모두 다음 번역 요청을 허용함
+    finally {
+      // 처리 중인 독후감 번호를 초기화함
+      setPendingReportNumb(undefined);
+    }
+  };
+
+  /**
    * 활성 사용자 검색 결과 한 건을 닉네임과 한줄소개 및 관계 버튼 행으로 렌더링함
    *
    * @author HanWon.Jang
@@ -957,7 +1027,11 @@ const FeedPage = () => {
    */
   const renderFeedItem = (item: FeedItem): ReactNode => {
     // 독후감 본문 앞뒤 공백을 제거해 빈 내용과 펼침 기준을 정확히 판정함
-    const reportContent = item.reptCntn?.trim() ?? "";
+    const originalContent = item.reptCntn?.trim() ?? "";
+    // 번역 보기 상태이면 현재 화면에 저장한 번역문을 사용하고 나머지는 원문을 사용함
+    const reportContent = item.reptNumb && translatedReports[item.reptNumb]
+      ? translations[item.reptNumb] ?? originalContent
+      : originalContent;
     // 공통 미리보기 길이를 초과한 독후감에만 펼침 기능을 제공함
     const isLongContent = reportContent.length > REPORT_CONTENT_PREVIEW_LENGTH;
     // 저장된 대상별 펼침 상태를 boolean 값으로 보정함
@@ -1067,6 +1141,17 @@ const FeedPage = () => {
     const openCurrentReplies = (): void => {
       // 댓글 목록에 현재 피드 유형과 대상 번호를 전달하도록 선택 항목을 저장함
       setReplyItem(item);
+    };
+
+    /**
+     * 현재 독후감 피드의 원문과 번역문 표시를 비동기로 전환함
+     *
+     * @author HanWon.Jang
+     * @return 반환값이 없음
+     */
+    const toggleCurrentTranslation = (): void => {
+      // 현재 피드의 캐시 조회 또는 번역 생성을 시작함
+      void handleTranslation(item);
     };
 
     // 피드 유형에 맞는 미디어와 교류 기능을 포함한 카드 한 건을 반환함
@@ -1238,37 +1323,53 @@ const FeedPage = () => {
 
         {/* 피드 좋아요와 댓글 교류 영역 */}
         <footer className={styles.actions}>
-          {/* 좋아요 변경과 좋아요 사용자 목록 영역 */}
-          <div className={styles.likeActionGroup}>
+          {isReportFeed && item.trnsAvaiYsno === "Y" ? (
             <button
-              className={styles.likeIconButton}
+              className={reportListStyles.translationButton}
               type="button"
-              aria-label={likeActionLabel}
-              onClick={toggleCurrentLike}
+              disabled={pendingReportNumb === item.reptNumb}
+              onClick={toggleCurrentTranslation}
             >
-              <img
-                className={styles.icon}
-                src={item.likeYsno === "Y" ? "/img/icons/icon-heart-fill.svg" : "/img/icons/icon-heart.svg"}
-                alt=""
-              />
+              {pendingReportNumb === item.reptNumb
+                ? message("frontend.report.translation.loading")
+                : message(item.reptNumb && translatedReports[item.reptNumb]
+                  ? "frontend.report.translation.original"
+                  : "frontend.report.translation.view")}
             </button>
-            <LikeUserListButton
-              className={styles.likeCountButton}
-              tagtType={item.tagtType}
-              tagtNumb={item.tagtNumb}
-              countLabel={item.likeCnt}
-            />
+          ) : <span />}
+          <div className={styles.reactionActions}>
+            {/* 좋아요 변경과 좋아요 사용자 목록 영역 */}
+            <div className={styles.likeActionGroup}>
+              <button
+                className={styles.likeIconButton}
+                type="button"
+                aria-label={likeActionLabel}
+                onClick={toggleCurrentLike}
+              >
+                <img
+                  className={styles.icon}
+                  src={item.likeYsno === "Y" ? "/img/icons/icon-heart-fill.svg" : "/img/icons/icon-heart.svg"}
+                  alt=""
+                />
+              </button>
+              <LikeUserListButton
+                className={styles.likeCountButton}
+                tagtType={item.tagtType}
+                tagtNumb={item.tagtNumb}
+                countLabel={item.likeCnt}
+              />
+            </div>
+            {/* 댓글 목록 열기 영역 */}
+            <button
+              className={styles.commentButton}
+              type="button"
+              aria-label={viewCommentsLabel}
+              onClick={openCurrentReplies}
+            >
+              <img className={styles.icon} src="/img/icons/icon-comment.svg" alt="" />
+              {item.replCnt}
+            </button>
           </div>
-          {/* 댓글 목록 열기 영역 */}
-          <button
-            className={styles.commentButton}
-            type="button"
-            aria-label={viewCommentsLabel}
-            onClick={openCurrentReplies}
-          >
-            <img className={styles.icon} src="/img/icons/icon-comment.svg" alt="" />
-            {item.replCnt}
-          </button>
         </footer>
       </article>
     );

@@ -52,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2026-08-14        SeungHyeon.Kang    공개 독후감 팔로우 작성자 우선 조회 반영
  * 2026-08-15        SeungHyeon.Kang    공개 독후감 조회·정렬 추가
  * 2026-08-21        SeungHyeon.Kang    독후감별 좋아요·댓글 알림 설정 추가
+ * 2026-09-07        HanWon.Jang        독후감 작성 언어와 공개 번역 가능 여부 반영
  */
 @Service
 @RequiredArgsConstructor
@@ -73,6 +74,8 @@ public class ReportServiceImpl implements ReportService {
     private final CodeUtil codeUtil;
     // BadWordDetection 업무 처리 서비스
     private final BadWordDetectionService badWordDetectionService;
+    // 공개 독후감 번역 가능 여부 처리 서비스
+    private final ReportTranslationService reportTranslationService;
     private static final DateTimeFormatter GOAL_MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
     // 목표 주간 FIELDS 설정값
     private static final WeekFields GOAL_WEEK_FIELDS = WeekFields.ISO;
@@ -1084,6 +1087,8 @@ public class ReportServiceImpl implements ReportService {
         boolean hasNext = safeList.size() > PAGE_SIZE;
         // 화면에는 현재 페이지 크기만 전달함
         List<ReportDto> visibleList = hasNext ? safeList.subList(0, PAGE_SIZE) : safeList;
+        // 현재 표시 언어와 월간 잔여량 및 캐시 상태로 카드별 번역 버튼 노출 여부를 설정함
+        reportTranslationService.applyReportAvailability(visibleList);
         // ISBN 기준 공개 독후감 페이지와 다음 페이지 여부를 반환함
         return ResultData.success(new PageDto<>(visibleList, normalizedPage, hasNext));
     }
@@ -1100,9 +1105,16 @@ public class ReportServiceImpl implements ReportService {
         request.setReptNumb(reptNumb);
         ReportDto target = reportMapper.getPublicReportTarget(request);
 
-        return StringUtil.isEmpty(target)
-                ? ResultData.fail(ResultEnum.COMMON_NO_DATA)
-                : ResultData.success(target);
+        // 현재 공개 상태인 대상이 없으면 만료되거나 접근할 수 없는 알림으로 처리함
+        if (StringUtil.isEmpty(target)) {
+            // "조회된 데이터가 없어요."
+            return ResultData.fail(ResultEnum.COMMON_NO_DATA);
+        }
+
+        // 알림 직접 진입 카드에도 목록과 같은 번역 버튼 노출 정책을 적용함
+        reportTranslationService.applyReportAvailability(List.of(target));
+        // 공개 독후감 한 건을 성공 응답으로 반환함
+        return ResultData.success(target);
     }
 
     /**
@@ -1214,6 +1226,8 @@ public class ReportServiceImpl implements ReportService {
         setDefaultReportColor(reportDto);
         // setDefaultPublicFlag 호출로 업무 처리에 필요한 값을 설정함
         setDefaultPublicFlag(reportDto);
+        // 수정 시점의 사용자 표시 언어를 독후감 원문 언어로 설정함
+        setReportLanguage(reportDto, userMapper.getUserSettingDtl(userNumb));
         // 독후감 입력값에서 허용하지 않는 스크립트 내용을 제거함
         sanitizeReport(reportDto, false);
         // 읽는 중으로 되돌린 독후감은 기존 공개 여부와 평점을 제거함
@@ -1612,9 +1626,26 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
+    /**
+     * 사용자 설정의 표시 언어를 독후감 원문 언어 코드로 변환함
+     *
+     * @author HanWon.Jang
+     * @param reportDto 원문 언어를 설정할 독후감 DTO
+     * @param setting 현재 사용자 설정
+     */
+    private void setReportLanguage(ReportDto reportDto, UserSettingDto setting) {
+        // 영어 사용 설정이 명시된 경우에만 영어 원문으로 분류하고 나머지는 한국어로 보정함
+        String languageCode = !StringUtil.isEmpty(setting)
+                && Constant.COMM_YES.equals(setting.getEnglishYsno()) ? "en" : "ko";
+        // 번역 방향 판정에 사용할 원문 언어 코드를 서버 설정 기준으로 저장함
+        reportDto.setLangCode(languageCode);
+    }
+
     /** 신규 독후감의 공개 및 반응 알림 기본값을 사용자 설정에서 적용함 */
     private void applyNewReportDefaults(ReportDto reportDto) {
         UserSettingDto setting = userMapper.getUserSettingDtl(reportDto.getUserNumb());
+        // 등록 시점의 사용자 표시 언어를 독후감 원문 언어로 설정함
+        setReportLanguage(reportDto, setting);
 
         if (StringUtil.isEmpty(reportDto.getPubcYsno()) || reportDto.getPubcYsno().isBlank()) {
             reportDto.setPubcYsno(StringUtil.isEmpty(setting)

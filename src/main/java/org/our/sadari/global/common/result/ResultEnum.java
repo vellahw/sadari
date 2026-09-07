@@ -17,6 +17,7 @@ import lombok.Getter;
  * 2026-08-20        SeungHyeon.Kang        모임 독서 변경 검증 코드 추가
  * 2026-08-22        SeungHyeon.Kang    중복 신고 검증 코드 추가
  * 2026-09-03        HanWon.Jang        응답 메시지 주석 정리
+ * 2026-09-07        HanWon.Jang        독후감 번역 실패 코드 추가
  */
 @Getter
 public enum ResultEnum {
@@ -100,6 +101,15 @@ public enum ResultEnum {
 
     // "동일한 대상은 다시 신고할 수 없어요."
     COMPLAINT_DUPLICATED(2027, "complaint.alert.0001"),
+
+    // "번역 기능을 사용할 수 없어요.\n잠시 후 다시 시도해주세요."
+    REPORT_TRANSLATION_FAILED(2028, "report.translation.failed"),
+
+    // "이번 달 번역 사용량을 모두 사용했어요."
+    REPORT_TRANSLATION_LIMITED(2029, "report.translation.limited"),
+
+    // "번역할 수 없는 독후감이에요."
+    REPORT_TRANSLATION_UNAVAILABLE(2030, "report.translation.unavailable"),
 
     // "인증에 실패했어요.\n다시 로그인 해주세요."
     AUTH_FAIL(1001, "auth.common.fail"),

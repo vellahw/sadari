@@ -260,8 +260,6 @@ export const reportRatingIcon = style({
 export const reportContentWrap = style({
   maxHeight: "70px",
   overflow: "clip",
-  transition: "max-height 280ms ease",
-  willChange: "max-height",
 });
 
 export const reportContentWrapOpen = style([
@@ -310,13 +308,39 @@ export const expandArrowOpen = style([
 ]);
 
 export const itemMetrics = style({
-  width: "100%",
   minHeight: "24px",
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-end",
   gap: "8px",
+});
+
+export const itemFooter = style({
+  width: "100%",
+  minHeight: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
   marginTop: "auto",
+});
+
+export const translationButton = style({
+  flexShrink: 0,
+  minHeight: "24px",
+  padding: 0,
+  border: 0,
+  backgroundColor: "transparent",
+  color: "#8a8a8a",
+  fontFamily: vars.font.semibold,
+  fontSize: "14px",
+  cursor: "pointer",
+  transition: "color 160ms ease, opacity 160ms ease",
+  selectors: {
+    "&:hover:not(:disabled)": { color: "#555555" },
+    "&:disabled": { cursor: "default", opacity: 0.5 },
+    "&:focus-visible": { outline: `2px solid ${vars.color.brand}`, outlineOffset: 2 },
+  },
 });
 
 export const metricButton = style({

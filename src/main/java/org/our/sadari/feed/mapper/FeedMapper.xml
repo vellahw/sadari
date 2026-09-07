@@ -59,6 +59,7 @@
                  , PF.FILE_PATH AS PORF_PATH
                  , R.PUBC_DATE AS ACTIVITY_DATE
                  , R.REPT_NUMB
+                 , R.LANG_CODE
                  , R.REPT_STAT
                  , FN_GET_CODE_NAME('READ_STAT', R.REPT_STAT, NULL, #{languageCode}) AS REPT_STAT_NAME
                  , R.REPT_GRDE
@@ -96,6 +97,7 @@
                  , NULL
                  , NULL
                  , NULL
+                 , NULL
                  , PF.FILE_PATH
               FROM VISIBLE_USER V
               JOIN TM_USERXM U
@@ -114,6 +116,7 @@
                  , U.USER_NICK
                  , PF.FILE_PATH
                  , U.BGIM_DATE
+                 , NULL
                  , NULL
                  , NULL
                  , NULL
@@ -172,6 +175,11 @@
              , COALESCE(LC.LIKE_CNT, 0) AS LIKE_CNT
              , CASE WHEN UL.USER_NUMB IS NULL THEN #{commNo} ELSE #{commYes} END AS LIKE_YSNO
              , COALESCE(RC.REPL_CNT, 0) AS REPL_CNT
+             , CASE WHEN FB.TAGT_TYPE = #{targetReport}
+                         AND T.ORIG_HASH = SHA2(COALESCE(FB.REPT_CNTN, ''), 256)
+                         THEN #{commYes}
+                    ELSE #{commNo}
+                END AS TRNS_CACHE_YSNO
           FROM FEED_BASE FB
      LEFT JOIN LIKE_COUNT LC
             ON LC.TAGT_TYPE = FB.TAGT_TYPE
@@ -183,6 +191,9 @@
             ON UL.USER_NUMB = #{loginUserNumb}
            AND UL.TAGT_TYPE = FB.TAGT_TYPE
            AND UL.TAGT_NUMB = FB.TAGT_NUMB
+     LEFT JOIN TB_REPTRN T
+            ON T.REPT_NUMB = FB.REPT_NUMB
+           AND T.LANG_CODE = #{languageCode}
         <where>
             <if test="tagtType != null and tagtType != ''">
                 FB.TAGT_TYPE = #{tagtType}

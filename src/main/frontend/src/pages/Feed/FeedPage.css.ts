@@ -277,17 +277,25 @@ export const reportContentLink = style({
   },
 });
 
-// 피드 카드 하단의 좋아요와 댓글 기능을 오른쪽에 배치함
+// 피드 카드 하단의 번역과 교류 기능을 양쪽에 배치함
 export const actions = style({
   width: "100%",
   minHeight: "24px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-end",
+  justifyContent: "space-between",
   gap: "8px",
   marginTop: "auto",
   padding: "0 16px 16px",
   boxSizing: "border-box",
+});
+// 피드 카드 우측의 좋아요와 댓글 기능을 한 묶음으로 정렬함
+export const reactionActions = style({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  marginLeft: "auto",
 });
 // 좋아요와 댓글 아이콘 버튼이 공유하는 크기와 상태를 정의함
 export const actionButton = style({

@@ -3,13 +3,18 @@
  *
  * @author HanWon.Jang
  */
+import { getApiErrorMessage } from "@/app/api/resultData";
+import { sweetError } from "@/app/lib/sweetAlert/sweetAlert";
 import { message } from "@/app/messages/message";
 import InfiniteScrollTrigger from "@/components/InfiniteScroll/InfiniteScrollTrigger";
 import CustomSelect, {
   type CustomSelectOption,
 } from "@/components/Select/CustomSelect";
 import UserActionMenu from "@/components/UserActionMenu/UserActionMenu";
-import type { PublicReportSortType } from "@/features/Book/api/bookApi";
+import {
+  setReportTranslationApi,
+  type PublicReportSortType,
+} from "@/features/Book/api/bookApi";
 import type { PublicReportType } from "@/features/Book/types/book.type";
 import type {
   ReportListBookSummary,
@@ -22,6 +27,8 @@ import {
 import ProfileImage from "@/features/User/components/ProfileImage";
 import ReplySheet from "@/features/reply/ReplySheet";
 import LikeUserListButton from "@/features/Social/components/LikeUserListButton";
+import { REPORT_CONTENT_PREVIEW_LENGTH } from "@/features/Book/utils/reportListView";
+import { useState } from "react";
 import * as styles from "./ReportListView.css";
 import AnimatedReportContent from "./AnimatedReportContent";
 
@@ -74,9 +81,9 @@ type ReportListViewProps = {
  * @param statusTone 완료와 중단 및 독서 중 상태 구분값
  * @return 상태 배지 클래스명
  */
-function getStatusClassName(
+const getStatusClassName = (
   statusTone: ReportListItem["statusTone"],
-): string {
+): string => {
   // 완독 상태이면 브랜드 색상의 완료 배지 클래스를 반환함
   if (statusTone === "done") {
     // 완료 상태 배지 클래스를 반환함
@@ -91,7 +98,7 @@ function getStatusClassName(
 
   // 나머지 상태에는 독서 중 배지 클래스를 반환함
   return styles.statusReading;
-}
+};
 
 /**
  * 도서 요약과 필터 및 독후감 카드 목록을 동일한 화면 구조로 표시함
@@ -100,7 +107,7 @@ function getStatusClassName(
  * @param props 독후감 목록 표시 데이터와 사용자 동작 처리 함수
  * @return 공통 독후감 목록 UI
  */
-export default function ReportListView({
+const ReportListView = ({
   book,
   reports,
   reportsCount,
@@ -121,10 +128,88 @@ export default function ReportListView({
   onOpenReply,
   onCloseReply,
   onLoadMore,
-}: ReportListViewProps) {
+}: ReportListViewProps) => {
+  // 독후감 번호별로 최초 조회한 번역문을 현재 화면에서 재사용함
+  const [translations, setTranslations] = useState<Record<number, string>>({});
+  // 카드별 원문 또는 번역문 표시 상태를 관리함
+  const [translatedReports, setTranslatedReports] = useState<Record<number, boolean>>({});
+  // 같은 화면에서 중복 번역 요청을 막기 위해 처리 중인 독후감 번호를 관리함
+  const [pendingReportNumb, setPendingReportNumb] = useState<number>();
   const showsStatusFilter = status !== undefined
     && statusOptions !== undefined
     && onStatusChange !== undefined;
+
+  /**
+   * 카드에 표시할 원문 또는 번역문을 반환함
+   *
+   * @author HanWon.Jang
+   * @param report 표시할 독후감 카드
+   * @return 현재 전환 상태에 맞는 독후감 본문
+   */
+  const getVisibleContent = (report: ReportListItem): string => {
+    // 번역 보기 상태이면서 번역문이 있으면 번역문을 표시함
+    if (translatedReports[report.reptNumb] && translations[report.reptNumb]) {
+      // 현재 화면에 저장한 번역문을 반환함
+      return translations[report.reptNumb];
+    }
+
+    // 번역 전이거나 원문 보기 상태이면 서버가 조회한 원문을 반환함
+    return report.reportContent;
+  };
+
+  /**
+   * 번역 캐시를 조회하거나 생성한 뒤 원문과 번역문 표시 상태를 전환함
+   *
+   * @author HanWon.Jang
+   * @param report 번역 표시 상태를 변경할 공개 독후감
+   * @return 반환값이 없음
+   */
+  const handleTranslation = async (report: ReportListItem): Promise<void> => {
+    // 현재 화면에 번역문이 있으면 외부 요청 없이 원문과 번역문만 전환함
+    if (translations[report.reptNumb]) {
+      // 선택한 카드의 표시 상태만 반전함
+      setTranslatedReports((current) => ({
+        ...current,
+        [report.reptNumb]: !current[report.reptNumb],
+      }));
+      return;
+    }
+
+    // 같은 독후감의 처리 중 요청은 중복 전송하지 않음
+    if (pendingReportNumb === report.reptNumb) {
+      return;
+    }
+
+    // 번역 요청이 끝날 때까지 선택한 카드의 버튼을 비활성화함
+    setPendingReportNumb(report.reptNumb);
+
+    try {
+      // 서버가 공개 범위와 월간 한도를 재검증한 번역문을 조회함
+      const translation = await setReportTranslationApi(report.reptNumb);
+      // 번역문을 카드 번호 기준으로 저장해 이후 전환에 재사용함
+      setTranslations((current) => ({
+        ...current,
+        [report.reptNumb]: translation.trnsCntn,
+      }));
+      // 최초 번역 성공 직후 해당 카드에 번역문을 표시함
+      setTranslatedReports((current) => ({ ...current, [report.reptNumb]: true }));
+    }
+
+    // 서버 실패 응답은 원시 예외 없이 공통 메시지로 안내함
+    catch (error) {
+      // 번역 실패 원인을 서버 메시지 또는 공통 재시도 문구로 표시함
+      await sweetError(
+        message("frontend.report.translation.failedTitle"),
+        getApiErrorMessage(error, message("frontend.common.tryAgain")),
+      );
+    }
+
+    // 성공과 실패 모두 다음 번역 요청을 허용함
+    finally {
+      // 처리 중인 독후감 번호를 초기화함
+      setPendingReportNumb(undefined);
+    }
+  };
 
   // 공개 목록과 모임 회차 목록이 공유하는 화면 구조를 반환함
   return (
@@ -263,11 +348,12 @@ export default function ReportListView({
                     /* 독후감 본문과 긴 내용 펼치기 영역 */
                     <>
                       <AnimatedReportContent
-                        content={report.reportContent}
-                        expanded={report.isExpanded || !report.isLongContent}
+                        content={getVisibleContent(report)}
+                        expanded={report.isExpanded
+                          || getVisibleContent(report).length <= REPORT_CONTENT_PREVIEW_LENGTH}
                       />
 
-                      {report.isLongContent ? (
+                      {getVisibleContent(report).length > REPORT_CONTENT_PREVIEW_LENGTH ? (
                         <button
                           className={styles.expandButton}
                           type="button"
@@ -293,8 +379,23 @@ export default function ReportListView({
                     </>
                   ) : null}
 
-                  <div className={styles.itemMetrics}>
-                    <div className={styles.metricGroup}>
+                  <footer className={styles.itemFooter}>
+                    {report.trnsAvaiYsno === "Y" ? (
+                      <button
+                        className={styles.translationButton}
+                        type="button"
+                        disabled={pendingReportNumb === report.reptNumb}
+                        onClick={() => void handleTranslation(report)}
+                      >
+                        {pendingReportNumb === report.reptNumb
+                          ? message("frontend.report.translation.loading")
+                          : message(translatedReports[report.reptNumb]
+                            ? "frontend.report.translation.original"
+                            : "frontend.report.translation.view")}
+                      </button>
+                    ) : <span />}
+                    <div className={styles.itemMetrics}>
+                      <div className={styles.metricGroup}>
                       <button
                         className={styles.metricIconButton}
                         type="button"
@@ -315,17 +416,18 @@ export default function ReportListView({
                         tagtNumb={report.reptNumb}
                         countLabel={report.likeCountLabel}
                       />
+                      </div>
+                      <button
+                        className={styles.commentButton}
+                        type="button"
+                        aria-label={message("frontend.book.publicReports.viewComments")}
+                        onClick={() => onOpenReply(report)}
+                      >
+                        <img src="/img/icons/icon-comment.svg" alt="" aria-hidden="true" />
+                        <span>{report.commentCountLabel}</span>
+                      </button>
                     </div>
-                    <button
-                      className={styles.commentButton}
-                      type="button"
-                      aria-label={message("frontend.book.publicReports.viewComments")}
-                      onClick={() => onOpenReply(report)}
-                    >
-                      <img src="/img/icons/icon-comment.svg" alt="" aria-hidden="true" />
-                      <span>{report.commentCountLabel}</span>
-                    </button>
-                  </div>
+                  </footer>
                 </article>
               ))}
               <InfiniteScrollTrigger
@@ -353,4 +455,6 @@ export default function ReportListView({
       ) : null}
     </>
   );
-}
+};
+
+export default ReportListView;
