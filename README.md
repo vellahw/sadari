@@ -50,14 +50,15 @@ Sadari는 독서 기록, 목표, 소셜 활동과 독서 모임을 연결한 Rea
 
 | 영역 | 사용자 기능 | 주요 구현 |
 | --- | --- | --- |
-| 도서 | 기간별 인기 도서와 Kakao 도서 검색 및 표지 색상 탐색 | `TM_REPORT` 작성자 수 기준 주간·월간·연간 상위 10권과 평균 평점, 50권 선조회·10권 분할 표시, Redis 쿼터 보호 |
-| 독서 기록 | 읽기 상태, 별점, 독후감, 기간별 독서량 | 도서·독후감 원자적 등록, 공개 범위와 목표 집계 |
-| 독서 목표 | 주간·월간·연간 목표와 달성 현황 | 기간 경계 계산, 이전 목표 복사와 조건부 집계 |
-| 소셜 | 프로필, 팔로우, 좋아요와 댓글 | 본인·타인 공개 범위 분리, 대상 유형 기반 반응 모델 |
-| 독서 모임 | 모임 생성, 가입 신청, 초대와 승인 | 모임장 권한, 정원 잠금, 초대 좌석과 만료 정책 |
-| 알림 | 서비스 알림과 PWA 웹 푸시 | 템플릿 치환, 중복 방지, 커밋 후 FCM 발송 |
-| 계정 | 로그인, 기기별 로그아웃, 비활성화와 탈퇴 예약 | Redis 세션, 상태 기반 접근 제한과 30일 삭제 유예 |
-| 콘텐츠 안전 | 비속어 입력 차단과 이미지 업로드 검증 | Aho-Corasick 사전 탐지, 이미지 재인코딩과 비공개 저장 |
+| 도서 | 기간별 인기 도서와 Kakao 도서 검색 및 표지 색상 탐색 | [고유 작성자 기준 인기 순위, 50권 선조회·10권 분할 표시와 Redis 쿼터 보호](docs/technical-blog/book-search-and-ranking.md) |
+| 독서 기록 | 읽기 상태, 별점, 독후감, 기간별 독서량 | [도서·독후감 원자적 등록, 상태별 저장 정책과 편집 충돌 감지](docs/technical-blog/reading-report-transaction.md) |
+| 독서 목표 | 주간·월간·연간 목표와 달성 현황 | [ISO 기간 경계, 이전 목표 복사와 조건부 집계](docs/technical-blog/reading-goal-aggregation.md) |
+| 소셜 | 프로필, 팔로우, 좋아요와 댓글 | [본인·타인 공개 범위 분리, 대상 유형 검증과 차단 관계](docs/technical-blog/social-feed-reactions.md) |
+| 독서 모임 | 모임 생성, 가입 신청, 초대와 승인 | [모임장 권한, 정원 행 잠금, 초대 예약 좌석과 만료 정책](docs/technical-blog/reading-club-concurrency.md) |
+| 알림 | 서비스 알림과 PWA 웹 푸시 | [언어별 템플릿 치환, 업무별 중복 방지와 커밋 이후 FCM 발송](docs/technical-blog/notification-push-transaction.md) |
+| 계정 | 로그인, 기기별 로그아웃, 비활성화와 탈퇴 예약 | [JWT 세션 식별자, Redis 토큰 회전과 30일 삭제 유예](docs/technical-blog/authentication-session-lifecycle.md) |
+| 콘텐츠 안전 | 비속어 입력 차단과 이미지 업로드 검증 | [Aho-Corasick 사전 탐지, 이미지 재인코딩과 비공개 저장](docs/technical-blog/content-validation-file-security.md) |
+| 다국어·번역 | 한국어·영어 UI와 공개 독후감 번역 보기 | [기기 언어 기본값, DB 문구 다국어 처리, Google 번역 캐시와 월 50만 자 제한](docs/technical-blog/multilingual-translation-cache.md) |
 
 ## 시스템 구성
 
@@ -242,6 +243,7 @@ sadari
 
 | 문서 | 내용 |
 | --- | --- |
+| [주요 기능 기술 글](docs/technical-blog/README.md) | 주요 기능별 문제, 구현 흐름, 핵심 소스와 트레이드오프 |
 | [프로젝트 개요와 아키텍처](docs/portfolio/project-overview.md) | 도메인 구성, 요청 흐름과 기술 선택 |
 | [백엔드와 데이터 설계](docs/portfolio/backend-data.md) | 트랜잭션, 공통 코드와 소셜 데이터 모델 |
 | [인증과 보안](docs/portfolio/auth-security.md) | OAuth, JWT, Redis, 계정 상태와 파일 보안 |
