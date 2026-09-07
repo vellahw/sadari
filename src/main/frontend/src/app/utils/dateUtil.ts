@@ -4,6 +4,7 @@
  *
  * @author HanWon.Jang
  */
+import { getMessageLocale } from "@/app/messages/message";
 
 /**
  * 숫자를 전달받아 두 자리의 문자열로 패딩 처리함
@@ -244,18 +245,20 @@ export function formatCompactDateEnglish(value?: string) {
  * @param value 8자리 날짜 문자열 (예: "20260715")
  * @return 로케일 판단에 맞춰 변형된 로컬 날짜 문자열
  */
-export function formatCompactDate(value?: string) {
+export const formatCompactDate = (value?: string) => {
 
-  const locale = navigator.language.toLowerCase();
+  // 계정에서 선택한 표시 언어를 출간일 표기 기준으로 사용
+  const locale = getMessageLocale();
 
-  // 브라우저의 기본 설정 언어가 한국어 계열인 경우 한글 표기법을 준수함
-  if (locale.startsWith("ko")) {
+  // 한국어 표시 설정에는 한글 날짜 표기 적용
+  if (locale === "ko") {
+    // 한국어 출간일 문자열 반환
     return formatCompactDateToKorean(value);
   }
 
-  // 그 외의 기본 시스템 로케일은 서구권 표준 영문 표기법을 디폴트로 사용함
+  // 영어 표시 설정에는 영문 날짜 표기 적용
   return formatCompactDateEnglish(value);
-}
+};
 
 /**
  * 하이픈으로 구분된 날짜 문자열을 Date 객체로 정적 파싱함

@@ -15,7 +15,8 @@ export function stripHtmlTags(value?: string) {
  * @param value 도서 검색 API 또는 서버에서 받은 저자 문자열
  * @return HTML 태그와 ^ 구분자를 제거한 저자 문자열
  */
-export function normalizeBookAuthor(value?: string) {
+export const normalizeBookAuthor = (value?: string) => {
 
-  return stripHtmlTags(value).replace(/\s*\^\s*/g, ", ");
-}
+  // 외부 도서 API의 구분자를 치환한 뒤 문자열 양끝의 불필요한 공백을 제거한 저자명 반환
+  return stripHtmlTags(value).replace(/\s*\^\s*/g, ", ").trim();
+};
