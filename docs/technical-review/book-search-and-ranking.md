@@ -1,4 +1,4 @@
-# Kakao 도서 검색 API 쿼터를 Redis로 보호한 방법
+# Kakao 도서 검색 API 쿼터를 Redis로 보호
 
 ## 문제
 
