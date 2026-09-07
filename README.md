@@ -64,6 +64,8 @@ Sadari는 독서 기록, 목표, 소셜 활동과 독서 모임을 연결한 Rea
 
 [![Sadari 전체 아키텍처](docs/architecture/assets/sadari-architecture-overview.svg)](docs/architecture/assets/sadari-architecture-overview.svg)
 
+외부 플랫폼 중 Google Cloud Translation API는 공개 독후감의 요청 시점 번역과 캐시에 사용합니다. Google Books API는 영문 도서 검색과 영문 도서 정보 제공을 위한 다음 연동 대상으로 표시했습니다.
+
 [전체 데이터베이스 ERD](docs/architecture/database-erd/README.md)에서 현재 DDL 기준 테이블·컬럼·관계와 영역별 구조를 확인할 수 있습니다.
 
 사용자 서비스와 관리자 서비스는 동기 REST 호출 대신 공통 MySQL 업무 테이블과 파일 저장소를 사용합니다. 이 구조의 스키마 결합은 다음 기준으로 통제합니다.
