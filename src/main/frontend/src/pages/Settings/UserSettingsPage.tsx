@@ -10,6 +10,7 @@ import {
 import { notifyFirebasePushEnabled } from "@/app/pwa/pushEvents";
 import { ActionButton } from "@/components/Button/ActionButton";
 import Loading from "@/components/Loading/Loading";
+import CustomSelect, { type CustomSelectOption } from "@/components/Select/CustomSelect";
 import {
   delPushSubApi,
   getPushConfigApi,
@@ -78,6 +79,20 @@ function UserSettingsPage({ section }: UserSettingsPageProps) {
       : LANGUAGE_FIELDS;
   const isDirty = Boolean(setting && savedSetting)
     && fields.some((field) => setting?.[field] !== savedSetting?.[field]);
+  const languageOptions: readonly CustomSelectOption<UserSetting["englishYsno"]>[] = [
+    {
+      value: "N",
+      // "한국어"
+      label: message("frontend.settings.language.korean"),
+    },
+    {
+      value: "Y",
+      // "영어"
+      label: message("frontend.settings.language.english"),
+    },
+  ];
+  // "표시 언어 선택"
+  const languageSelectLabel = message("frontend.settings.language.selectLabel");
 
   useEffect(() => {
     let ignore = false;
@@ -126,6 +141,13 @@ function UserSettingsPage({ section }: UserSettingsPageProps) {
     setSetting((current) => current
       ? { ...current, [field]: current[field] === "Y" ? "N" : "Y" }
       : current);
+  };
+
+  /** 표시 언어 셀렉트박스 선택값을 영어 사용 여부에 반영함 */
+  const handleLanguageChange = (englishYsno: UserSetting["englishYsno"]) => {
+
+    // 선택한 언어 값을 현재 설정에 반영함
+    setSetting((current) => current ? { ...current, englishYsno } : current);
   };
 
   /** 현재 설정 화면의 필드만 서버에 저장함 */
@@ -321,11 +343,28 @@ function UserSettingsPage({ section }: UserSettingsPageProps) {
         </section>
       ) : (
         <section className={styles.section}>
-          {renderSwitch(
-            "englishYsno",
-            "frontend.settings.language.english",
-            "frontend.settings.language.english.description",
-          )}
+          {/* 표시 언어 라벨과 언어 선택 영역 */}
+          <div className={styles.languageField}>
+            <span className={styles.settingText}>
+              <strong className={styles.settingTitle}>
+                {/* "표시 언어" */}
+                {message("frontend.settings.language.fieldLabel")}
+              </strong>
+              <span className={styles.settingDescription}>
+                {/* "선택한 언어를 앱 전체에 적용합니다." */}
+                {message("frontend.settings.language.fieldDescription")}
+              </span>
+            </span>
+            <CustomSelect<UserSetting["englishYsno"]>
+              value={setting?.englishYsno ?? "N"}
+              options={languageOptions}
+              ariaLabel={languageSelectLabel}
+              className={styles.languageSelect}
+              triggerClassName={styles.languageSelectTrigger}
+              optionListClassName={styles.languageOptionList}
+              onChange={handleLanguageChange}
+            />
+          </div>
         </section>
       )}
 

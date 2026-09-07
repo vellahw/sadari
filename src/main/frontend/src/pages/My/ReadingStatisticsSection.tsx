@@ -1184,7 +1184,7 @@ function ReadingStatisticsSection({ targetUserNumb }: ReadingStatisticsSectionPr
     return (
       <span className={styles.ratingTick} key={ratingTick}>
         {/* "{0}권" */}
-        {message("frontend.common.bookCount", [ratingTick])}
+        {message("frontend.profile.readingStats.ratingTick", [ratingTick])}
       </span>
     );
   };

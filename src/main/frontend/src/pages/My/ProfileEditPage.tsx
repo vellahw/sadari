@@ -1320,7 +1320,7 @@ const ProfileEditPage = () => {
     }> = [
       {
         label: /* "총 읽은 책" */ message("frontend.profile.stats.totalReadBook"),
-        value: /* "{0}권" */ message("frontend.common.bookCount", [summary.totalReadBookCnt ?? 0]),
+        value: /* "{0}권" */ message("frontend.profile.stats.bookCount", [summary.totalReadBookCnt ?? 0]),
         action: "totalReadBook",
       },
       {

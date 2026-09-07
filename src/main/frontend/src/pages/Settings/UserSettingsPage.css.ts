@@ -98,4 +98,31 @@ export const switchTrack = style({
   },
 });
 
+export const languageField = style({
+  display: "grid",
+  gap: "12px",
+});
+
+export const languageSelect = style({ width: "100%" });
+
+export const languageSelectTrigger = style({
+  width: "100%",
+  height: "48px",
+  padding: "0 14px",
+  border: `1px solid ${vars.color.gray300}`,
+  borderRadius: "12px",
+  backgroundColor: "#ffffff",
+  selectors: {
+    "&:hover": { backgroundColor: vars.color.gray100 },
+    "&:focus-visible": { outline: "2px solid #78b991", outlineOffset: "2px" },
+  },
+});
+
+export const languageOptionList = style({
+  right: "auto",
+  left: 0,
+  width: "100%",
+  boxSizing: "border-box",
+});
+
 export const saveArea = style({ marginTop: "auto" });
