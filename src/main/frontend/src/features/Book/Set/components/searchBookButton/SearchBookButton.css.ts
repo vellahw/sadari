@@ -36,4 +36,5 @@ export const searchBtnText = style({
   fontSize: vars.fontSize.body,
   marginTop: "14px",
   marginBottom: 0,
+  textAlign: "center"
 });
