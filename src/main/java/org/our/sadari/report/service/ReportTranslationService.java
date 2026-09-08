@@ -43,6 +43,7 @@ import org.springframework.web.client.RestTemplate;
  * DATE              AUTHOR             NOTE
  * -----------------------------------------------------------
  * 2026-09-07        HanWon.Jang        최초 생성
+ * 2026-09-08        HanWon.Jang        본문 기준 번역 언어 판정
  */
 @Slf4j
 @Service
@@ -175,9 +176,11 @@ public class ReportTranslationService {
 
         // 요청의 표시 언어를 서버가 지원하는 번역 대상 언어로 확정함
         String targetLanguage = getTargetLanguage();
+        // 작성 당시 앱 언어와 실제 본문 언어가 다른 기존 독후감의 번역 방향 보정
+        String sourceLanguage = getSourceLanguage(source.getSourceLangCode(), source.getSourceContent());
 
         // 원문 언어와 표시 언어가 같거나 본문이 비어 있으면 번역 기능을 제공하지 않음
-        if (targetLanguage.equals(source.getSourceLangCode()) || StringUtil.isEmpty(source.getSourceContent())) {
+        if (targetLanguage.equals(sourceLanguage) || StringUtil.hasEmpty(sourceLanguage, source.getSourceContent())) {
             // "번역할 수 없는 독후감이에요."
             return ResultData.fail(ResultEnum.REPORT_TRANSLATION_UNAVAILABLE);
         }
@@ -217,7 +220,7 @@ public class ReportTranslationService {
         try {
             // 원문과 작성 언어 및 표시 언어를 Google 번역 API에 전달함
             String translatedContent = getGoogleTranslation(
-                    source.getSourceContent(), source.getSourceLangCode(), targetLanguage);
+                    source.getSourceContent(), sourceLanguage, targetLanguage);
             // 검증된 번역문을 캐시 저장값으로 설정함
             source.setTrnsCntn(translatedContent);
             // 같은 독후감과 언어의 이전 캐시가 있으면 원문 해시와 번역문을 함께 갱신함
@@ -351,9 +354,10 @@ public class ReportTranslationService {
      */
     private String getAvailability(String sourceLanguage, String sourceContent, String cacheYsno
                                  , long remainingChars) {
-        // 키 누락과 Redis 장애를 포함한 음수 잔여량에서는 새 번역 버튼을 노출하지 않음
-        if (StringUtil.hasEmpty(sourceLanguage, sourceContent)
-                || getTargetLanguage().equals(sourceLanguage)) {
+        // 저장 언어 누락 시에도 본문으로 판정 가능한 원문의 번역 방향 확인
+        String contentLanguage = getSourceLanguage(sourceLanguage, sourceContent);
+        // 저장된 앱 언어 대신 실제 본문 기준으로 동일 언어와 빈 본문 번역 제외
+        if (StringUtil.hasEmpty(contentLanguage, sourceContent) || getTargetLanguage().equals(contentLanguage)) {
             // 원문과 대상 언어가 같거나 본문이 없는 카드의 번역 버튼 숨김 값을 반환함
             return Constant.COMM_NO;
         }
@@ -369,6 +373,48 @@ public class ReportTranslationService {
         boolean available = !StringUtil.isEmpty(translationApiKey) && remainingChars >= sourceChars;
         // 월간 50만자 한도 안에서 새 번역이 가능한지 Y 또는 N으로 반환함
         return available ? Constant.COMM_YES : Constant.COMM_NO;
+    }
+
+    /**
+     * 본문의 한글과 라틴 문자 수를 기준으로 번역 원문 언어 판정
+     *
+     * @author HanWon.Jang
+     * @param storedLanguage 작성 당시 저장된 언어 코드
+     * @param content 독후감 원문
+     * @return 본문 언어 또는 판정 불가 시 저장된 언어
+     */
+    private String getSourceLanguage(String storedLanguage, String content) {
+        // 빈 본문은 호출부에서 번역 제외 처리
+        if (StringUtil.isEmpty(content)) {
+            // 문자 정보가 없는 원문의 기존 언어 반환
+            return storedLanguage;
+        }
+
+        // ponytail: 한영 혼합문은 문자 수 기준 판정, 다국어 지원 시 언어 감지기로 교체
+        int koreanChars = 0;
+        int latinChars = 0;
+        // 공백과 숫자 및 이모지를 제외한 문자 체계 비교
+        for (int codePoint : content.codePoints().toArray()) {
+            // 조합형 자모와 완성형 한글을 같은 문자 체계로 집계
+            if (Character.UnicodeScript.of(codePoint) == Character.UnicodeScript.HANGUL) {
+                koreanChars++;
+            }
+
+            // 영어 본문의 라틴 문자 집계
+            else if (Character.UnicodeScript.of(codePoint) == Character.UnicodeScript.LATIN) {
+                latinChars++;
+            }
+
+        }
+
+        // 문자 수가 같거나 판정할 문자가 없으면 기존 언어 유지
+        if (koreanChars == latinChars) {
+            // 불확실한 본문의 저장된 언어 반환
+            return storedLanguage;
+        }
+
+        // 본문에서 더 많이 사용한 지원 언어 반환
+        return koreanChars > latinChars ? "ko" : "en";
     }
 
     /**

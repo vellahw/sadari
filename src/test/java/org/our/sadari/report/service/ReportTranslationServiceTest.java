@@ -12,8 +12,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.our.sadari.feed.dto.FeedDto;
 import org.our.sadari.global.common.constant.Constant;
 import org.our.sadari.global.common.result.ResultData;
 import org.our.sadari.report.dto.ReportDto;
@@ -34,6 +37,7 @@ import org.springframework.web.client.RestTemplate;
  * DATE              AUTHOR             NOTE
  * -----------------------------------------------------------
  * 2026-09-07        HanWon.Jang        최초 생성
+ * 2026-09-08        HanWon.Jang        한영 본문 번역 방향 검증
  */
 @ExtendWith(MockitoExtension.class)
 class ReportTranslationServiceTest {
@@ -88,13 +92,17 @@ class ReportTranslationServiceTest {
      *
      * @author HanWon.Jang
      */
-    @Test
-    void reuseTranslationCache() {
+    @ParameterizedTest
+    @CsvSource({"en,ko,좋은 책입니다,This is a good book.", "ko,ko,This is a good book.,좋은 책입니다"})
+    void reuseTranslationCache(String targetLanguage, String storedLanguage, String content
+                              , String translatedContent) {
+        // 작성 당시 앱 언어와 본문이 다른 경우에도 현재 표시 언어로 번역 요청
+        LocaleContextHolder.setLocale(Locale.forLanguageTag(targetLanguage));
         // 공개 범위 검증을 통과할 한국어 독후감 원문을 구성함
         ReportTranslationDto source = new ReportTranslationDto();
         source.setReptNumb(17L);
-        source.setSourceLangCode("ko");
-        source.setSourceContent("좋은 책입니다");
+        source.setSourceLangCode(storedLanguage);
+        source.setSourceContent(content);
         when(reportMapper.getReportTrnsSource(any(ReportTranslationDto.class))).thenReturn(source);
         // 서비스가 계산한 원문 해시와 같은 유효 캐시를 동적으로 반환함
         when(reportMapper.getReportTrnsDtl(any(ReportTranslationDto.class))).thenAnswer(invocation -> {
@@ -103,7 +111,7 @@ class ReportTranslationServiceTest {
             cached.setReptNumb(request.getReptNumb());
             cached.setLangCode(request.getLangCode());
             cached.setOrigHash(request.getOrigHash());
-            cached.setTrnsCntn("This is a good book.");
+            cached.setTrnsCntn(translatedContent);
             return cached;
         });
 
@@ -113,9 +121,62 @@ class ReportTranslationServiceTest {
         assertEquals(200, result.getCode());
         ReportTranslationDto translation = (ReportTranslationDto) result.getData();
         assertTrue(translation.isCached());
-        assertEquals("This is a good book.", translation.getTrnsCntn());
+        assertEquals(translatedContent, translation.getTrnsCntn());
+        // 번역 캐시 조회 대상이 앱의 현재 표시 언어와 일치하는지 검증
+        assertEquals(targetLanguage, translation.getLangCode());
         // 캐시 적중 요청은 월간 사용량과 Google 호출을 사용하지 않는지 확인함
         verifyNoInteractions(redisTemplate, restTemplate);
+    }
+
+    /**
+     * 작성 당시 앱 언어와 무관하게 목록과 피드의 본문 기준 번역 버튼 판정 검증
+     *
+     * @author HanWon.Jang
+     * @param targetLanguage 현재 표시 언어
+     * @param storedLanguage 작성 당시 언어
+     * @param content 독후감 본문
+     * @param expected 번역 버튼 표시 여부
+     */
+    @ParameterizedTest
+    @CsvSource({
+        "ko,ko,This is a good book.,Y",
+        "ko,en,This is a good book.,Y",
+        "en,en,정말 재미있게 읽은 책입니다,Y",
+        "ko,en,정말 재미있게 읽은 책입니다,N",
+        "en,ko,This is a good book.,N",
+        "ko,ko,'',N",
+        "ko,ko,123 😀,N"
+    })
+    void showByContentLanguage(String targetLanguage, String storedLanguage, String content
+                               , String expected) {
+        // 새 번역이 가능한 월간 잔여량과 표시 언어 구성
+        LocaleContextHolder.setLocale(Locale.forLanguageTag(targetLanguage));
+        // 월간 사용량 저장소 대체
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        // 사용량이 없는 월의 번역 허용 상태 구성
+        when(valueOperations.get(any(String.class))).thenReturn("0");
+        // 공개 목록의 원문과 저장된 언어 구성
+        ReportDto report = new ReportDto();
+        // 작성 당시 앱 언어 설정
+        report.setLangCode(storedLanguage);
+        // 실제 작성한 본문 설정
+        report.setReptCntn(content);
+        // 동일한 독후감의 피드 항목 구성
+        FeedDto feed = new FeedDto();
+        // 번역 대상 독후감 피드 유형 설정
+        feed.setTagtType(Constant.LIKE_TARGET_REPORT);
+        // 작성 당시 앱 언어 설정
+        feed.setLangCode(storedLanguage);
+        // 실제 작성한 본문 설정
+        feed.setReptCntn(content);
+        // 공개 목록의 번역 버튼 판정 실행
+        translationService.applyReportAvailability(List.of(report));
+        // 피드의 번역 버튼 판정 실행
+        translationService.applyFeedAvailability(List.of(feed));
+        // 두 화면에 같은 본문 언어 판정 적용 여부 확인
+        assertEquals(expected, report.getTrnsAvaiYsno());
+        // 피드의 번역 버튼 표시 여부 확인
+        assertEquals(expected, feed.getTrnsAvaiYsno());
     }
 
     /**
