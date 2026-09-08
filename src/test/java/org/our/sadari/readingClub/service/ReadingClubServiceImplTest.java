@@ -142,7 +142,7 @@ class ReadingClubServiceImplTest {
         when(readingClubMapper.getActiveMemberUserNumbList(10L)).thenReturn(List.of(20L, 30L));
         when(codeUtil.getFirstCode(Constant.CODE_BOOK_COLR)).thenReturn("GREEN");
         when(bookMapper.dupBook(request)).thenReturn(1);
-        when(bookMapper.getBookNumbByIsbn("9781234567890")).thenReturn(99L);
+        when(bookMapper.getBookNumbByIsbn(request)).thenReturn(99L);
         when(readingClubMapper.getNextReadingRoundNumb(10L)).thenReturn(1L);
         when(readingClubMapper.setReadingRound(10L, 20L, request)).thenReturn(1);
         when(readingClubMapper.setReadingParticipant(any(), any(), any(Long.class), any(), any())).thenReturn(1);
@@ -320,7 +320,7 @@ class ReadingClubServiceImplTest {
         when(readingClubMapper.getReadingReportNumbListForUpdate(10L, 1L)).thenReturn(List.of(120L));
         when(readingClubMapper.getWrittenReadingReportCnt(10L, 1L)).thenReturn(0);
         when(bookMapper.dupBook(request)).thenReturn(1);
-        when(bookMapper.getBookNumbByIsbn("9780987654321")).thenReturn(100L);
+        when(bookMapper.getBookNumbByIsbn(request)).thenReturn(100L);
         when(readingClubMapper.uptReading(10L, 1L, request)).thenReturn(1);
 
         // 현재 회차의 도서와 목표 기간 수정을 실행함

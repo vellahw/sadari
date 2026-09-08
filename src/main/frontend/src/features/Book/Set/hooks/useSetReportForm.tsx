@@ -117,6 +117,7 @@ export function useSetReportForm(
       bookAthr: normalizeBookAuthor(selectedBook.author),
       bookPubl: stripHtmlTags(selectedBook.publisher),
       bookIsbn: sanitizeText(selectedBook.isbn),
+      langCode: selectedBook.langCode,
       bookCvim: sanitizeText(selectedBook.image),
       bookDesc: stripHtmlTags(selectedBook.description),
       publDate: stripHtmlTags(selectedBook.pubdate),

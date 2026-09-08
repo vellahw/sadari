@@ -211,6 +211,7 @@ export type ClubReadingCreateParams = {
   bookAthr: string;
   bookPubl: string;
   bookIsbn: string;
+  langCode?: "ko" | "en";
   bookCvim: string;
   bookDesc: string;
   publDate: string;

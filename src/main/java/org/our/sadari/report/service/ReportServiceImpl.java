@@ -1183,7 +1183,7 @@ public class ReportServiceImpl implements ReportService {
         // 앞선 조건에 해당하지 않는 대체 업무 흐름으로 전환함
         else {
             // BookNumb 업무 값을 reportDto DTO에 설정함
-            reportDto.setBookNumb(bookMapper.getBookNumbByIsbn(reportDto.getBookIsbn()));
+            reportDto.setBookNumb(bookMapper.getBookNumbByIsbn(reportDto));
         }
 
         // Report 업무 값을 reportMapper DTO에 설정함

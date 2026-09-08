@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.our.sadari.alim.service.AlimService;
+import org.our.sadari.book.dto.BookDto;
 import org.our.sadari.book.mapper.BookMapper;
 import org.our.sadari.global.common.code.util.CodeUtil;
 import org.our.sadari.global.common.constant.Constant;
@@ -166,7 +167,9 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         }
 
         // 도서 마스터는 ISBN 기준으로 재사용하고 없을 때만 생성함
-        Long bookNumb = bookMapper.getBookNumbByIsbn(request.getBookIsbn());
+        // 언어 코드가 없는 이전 화면 요청은 기존 한국어 도서 정보로 보정함
+        setDefaultBookLanguage(request);
+        Long bookNumb = bookMapper.getBookNumbByIsbn(request);
         if (StringUtil.isEmpty(bookNumb)) {
             bookMapper.setBook(request);
             bookNumb = request.getBookNumb();
@@ -338,7 +341,9 @@ public class ReadingClubServiceImpl implements ReadingClubService {
             throw new CustomException(ResultEnum.COMMON_SAVE_REJECTED, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        // ISBN 기준으로 등록된 도서가 없을 때만 도서 마스터를 생성함
+        // 언어 코드가 없는 이전 화면 요청은 기존 한국어 도서 정보로 보정함
+        setDefaultBookLanguage(request);
+        // ISBN과 언어 기준으로 등록된 도서가 없을 때만 도서 마스터를 생성함
         if (bookMapper.dupBook(request) == 0) {
             // 신규 도서 마스터를 저장함
             int savedBookCnt = bookMapper.setBook(request);
@@ -348,7 +353,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
             }
         } else {
             // 기존 ISBN의 도서 번호를 이번 회차에 연결함
-            request.setBookNumb(bookMapper.getBookNumbByIsbn(request.getBookIsbn()));
+            request.setBookNumb(bookMapper.getBookNumbByIsbn(request));
         }
 
         // 기존 도서 조회 결과가 없으면 외래키가 없는 회차 생성을 차단함
@@ -436,6 +441,8 @@ public class ReadingClubServiceImpl implements ReadingClubService {
             return ResultData.fail(ResultEnum.READING_CLUB_BOOK_CHANGE_REJECTED);
         }
 
+        // 언어 코드가 없는 이전 화면 요청은 기존 한국어 도서 정보로 보정함
+        setDefaultBookLanguage(request);
         // 기존 도서를 유지하면 도서 마스터를 다시 조회하거나 생성하지 않음
         if (!bookChanged) {
             request.setBookNumb(reading.getBookNumb());
@@ -448,7 +455,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
             }
         } else {
             // 이미 존재하는 ISBN의 도서 번호를 수정 대상 회차에 연결함
-            request.setBookNumb(bookMapper.getBookNumbByIsbn(request.getBookIsbn()));
+            request.setBookNumb(bookMapper.getBookNumbByIsbn(request));
         }
 
         // 유효한 도서 번호가 없으면 회차와 독후감의 기존 연결을 유지함
@@ -2238,5 +2245,18 @@ public class ReadingClubServiceImpl implements ReadingClubService {
 
         // 선택 항목이 없는 고정 컬럼에는 Null을 반환함
         return null;
+    }
+
+    /**
+     * 이전 화면 요청의 도서 정보 언어를 한국어로 보정함
+     *
+     * @author HanWon.Jang
+     * @param bookDto 도서 정보 언어를 확인할 요청 DTO
+     */
+    private void setDefaultBookLanguage(BookDto bookDto) {
+        // 언어별 검색 결과는 전달값을 유지하고 기존 요청만 한국어 도서 정보로 처리함
+        if (StringUtil.isEmpty(bookDto.getLangCode())) {
+            bookDto.setLangCode("ko");
+        }
     }
 }

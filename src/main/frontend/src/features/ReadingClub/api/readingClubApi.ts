@@ -54,6 +54,7 @@ export const createClubBookRecommApi = async (
     bookAthr: book.author,
     bookPubl: book.publisher,
     bookIsbn: book.isbn,
+    langCode: book.langCode,
     bookCvim: book.image,
     bookDesc: book.description,
     publDate: book.pubdate,

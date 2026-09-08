@@ -78,6 +78,7 @@ function toReadingParams(
     bookAthr: normalizeBookAuthor(selectedBook.author),
     bookPubl: stripHtmlTags(selectedBook.publisher),
     bookIsbn: stripHtmlTags(selectedBook.isbn),
+    langCode: selectedBook.langCode,
     bookCvim: selectedBook.image || "/img/common/no-image.png",
     bookDesc: stripHtmlTags(selectedBook.description)
       || message("frontend.readingClub.reading.noBookDescription"),

@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
  * 2026-07-28        SeungHyeon.Kang    DTO 문서화 규칙 정비
  * 2026-07-31        SeungHyeon.Kang    카카오 도서 검색 응답 형식 적용
  * 2026-08-02        SeungHyeon.Kang    외부 응답 DTO와 화면 응답 DTO 분리
+ * 2026-09-08        HanWon.Jang        검색 결과 언어 코드 추가
  */
 @Schema(description = "도서 검색 화면 응답 DTO", hidden = true)
 public class BookJsonDto {
@@ -27,11 +28,11 @@ public class BookJsonDto {
      *
      * @author SeungHyeon.Kang
      */
-    // 카카오 도서 검색 API에서 조회된 개별 도서 정보
+    // 외부 도서 검색 API에서 조회된 개별 도서 정보
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(description = "카카오 도서 검색 결과 항목 DTO", hidden = true)
+    @Schema(description = "외부 도서 검색 결과 항목 DTO", hidden = true)
     public static class BookDto {
 
         // 도서 제목
@@ -46,10 +47,13 @@ public class BookJsonDto {
         // 도서를 식별하는 ISBN 값
         private String isbn;
 
+        // 도서 정보와 ISBN 중복 저장을 구분할 언어 코드
+        private String langCode;
+
         // 카카오 썸네일에서 추출한 도서 표지 원본 이미지 URL
         private String image;
 
-        // 원본 표지 로드에 실패할 때 사용할 카카오 썸네일 URL
+        // 원본 표지 로드에 실패할 때 사용할 공급자 썸네일 URL
         private String thumbnailImage;
 
         // 도서의 주요 내용을 요약한 설명

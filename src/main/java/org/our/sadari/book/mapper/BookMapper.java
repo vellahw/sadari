@@ -17,26 +17,27 @@ import org.our.sadari.book.dto.PopularBookDto;
  * -----------------------------------------------------------
  * 2026-07-17        SeungHyeon.Kang    최초 생성
  * 2026-08-16        SeungHyeon.Kang    기간별 인기 도서 조회 추가
+ * 2026-09-08        HanWon.Jang        ISBN과 언어 기준 도서 식별 반영
  */
 @Mapper
 public interface BookMapper {
     /**
-     * ISBN 기준으로 이미 등록된 도서가 있는지 확인함
+     * ISBN과 언어 기준으로 이미 등록된 도서가 있는지 확인함
      *
      * @author SeungHyeon.Kang
-     * @param bookDto ISBN을 포함한 도서 정보
+     * @param bookDto ISBN과 언어 코드를 포함한 도서 정보
      * @return 중복 도서 수
      */
     int dupBook(BookDto bookDto);
 
     /**
-     * ISBN 기준으로 기존 도서 번호를 조회함
+     * ISBN과 언어 기준으로 기존 도서 번호를 조회함
      *
      * @author SeungHyeon.Kang
-     * @param bookIsbn 조회할 도서 ISBN
+     * @param bookDto 조회할 ISBN과 언어 코드를 포함한 도서 정보
      * @return 도서 번호
      */
-    Long getBookNumbByIsbn(String bookIsbn);
+    Long getBookNumbByIsbn(BookDto bookDto);
 
     /**
      * 신규 도서 정보를 등록함

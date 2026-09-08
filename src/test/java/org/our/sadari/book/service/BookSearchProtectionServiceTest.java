@@ -26,7 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.our.sadari.book.dto.KakaoBookJsonDto;
+import org.our.sadari.book.dto.BookSearchResponseDto;
 import org.our.sadari.book.dto.PopularSearchKeywordDto;
 import org.our.sadari.global.common.service.BadWordDetectionService;
 import org.springframework.data.redis.core.DefaultTypedTuple;
@@ -173,12 +173,12 @@ class BookSearchProtectionServiceTest {
         // Redis Lua Script가 회원별 및 앱 전체 실제 호출을 함께 허용하도록 설정함
         when(redisTemplate.execute(
                 org.mockito.ArgumentMatchers.<RedisScript<Long>>any()
-              , eq(List.of("book:search:rate:day:7", "book:search:provider:day"))
+              , eq(List.of("book:search:rate:day:7", "book:search:provider:day:kakao"))
               , eq("200"), eq("27000"), eq("86400")
         )).thenReturn(1L);
 
         // 캐시 미적중 회원의 카카오 실제 호출 한도를 예약함
-        boolean allowed = bookSearchProtectionService.reserveProviderCall(7L);
+        boolean allowed = bookSearchProtectionService.reserveProviderCall(7L, "kakao");
 
         // 회원별 및 앱 전체 일간 한도가 함께 예약되는지 확인함
         assertTrue(allowed);
@@ -193,13 +193,11 @@ class BookSearchProtectionServiceTest {
     void cachesWithoutPlainQuery() {
         // Redis 값 저장 연산을 공용 검색 캐시에 사용할 수 있도록 설정함
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        // 마지막 페이지인 빈 카카오 검색 응답을 생성함
-        KakaoBookJsonDto searchResult = new KakaoBookJsonDto();
-        // 캐시 직렬화 대상에 빈 도서 목록을 설정함
-        searchResult.setDocuments(List.of());
+        // 마지막 페이지인 빈 화면 검색 응답을 생성함
+        BookSearchResponseDto searchResult = new BookSearchResponseDto(List.of(), true, null);
 
         // 검색어와 첫 페이지의 카카오 응답을 공용 캐시에 저장함
-        bookSearchProtectionService.setCachedSearch("민감한 검색어", 1, searchResult);
+        bookSearchProtectionService.setCachedSearch("google", "민감한 검색어", 1, searchResult);
 
         // 공용 캐시 키와 JSON 및 TTL이 Redis에 저장되었는지 확인함
         verify(valueOperations).set(cacheKeyCaptor.capture(), anyString(), eq(Duration.ofSeconds(600)));

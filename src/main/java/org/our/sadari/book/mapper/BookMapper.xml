@@ -2,20 +2,22 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.our.sadari.book.mapper.BookMapper">
 
-    <!-- ISBN 기준으로 도서 마스터 중복 등록 여부를 확인함 -->
+    <!-- ISBN과 언어 기준으로 도서 마스터 중복 등록 여부를 확인함 -->
     <select id="dupBook" parameterType="org.our.sadari.book.dto.BookDto" resultType="int">
         SELECT /* dupBook */
                COUNT(*)
           FROM TM_BKINFO
          WHERE BOOK_ISBN = #{bookIsbn}
+           AND LANG_CODE = #{langCode}
     </select>
 
-    <!-- ISBN 기준으로 이미 등록된 도서 마스터 번호를 조회함 -->
-    <select id="getBookNumbByIsbn" resultType="long">
+    <!-- ISBN과 언어 기준으로 이미 등록된 도서 마스터 번호를 조회함 -->
+    <select id="getBookNumbByIsbn" parameterType="org.our.sadari.book.dto.BookDto" resultType="long">
         SELECT /* getBookNumbByIsbn */
                BOOK_NUMB
           FROM TM_BKINFO
          WHERE BOOK_ISBN = #{bookIsbn}
+           AND LANG_CODE = #{langCode}
     </select>
 
     <!-- 회원 상태와 독서 상태 및 공개 여부에 관계없이 선택 기간의 고유 독후감 작성자 수 기준 인기 도서를 조회함 -->
@@ -68,18 +70,20 @@
     <insert id="setBook" parameterType="org.our.sadari.book.dto.BookDto" useGeneratedKeys="true" keyProperty="bookNumb">
         /* setBook */
         INSERT INTO TM_BKINFO (
-                    BOOK_ATHR
-                  , BOOK_CVIM
-                  , BOOK_ISBN
-                  , BOOK_PUBL
+                    BOOK_ISBN
+                  , LANG_CODE
                   , BOOK_TITL
+                  , BOOK_ATHR
+                  , BOOK_PUBL
+                  , BOOK_CVIM
                   , BOOK_DESC
                   , PUBL_DATE
-        ) VALUES (  REPLACE(#{bookAthr}, '^', ', ')
-                  , #{bookCvim}
-                  , #{bookIsbn}
-                  , #{bookPubl}
+        ) VALUES (  #{bookIsbn}
+                  , #{langCode}
                   , #{bookTitl}
+                  , REPLACE(#{bookAthr}, '^', ', ')
+                  , #{bookPubl}
+                  , #{bookCvim}
                   , #{bookDesc}
                   , #{publDate}
         )

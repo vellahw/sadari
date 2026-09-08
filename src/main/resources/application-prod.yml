@@ -60,13 +60,13 @@ book:
     url: https://dapi.kakao.com/v3/search/book
     # 캐시 적중 검색이 Redis와 서버를 과도하게 사용하지 않도록 차단하는 회원별 60초 요청 한도임
     cache-hit-rate-limit-per-minute: ${BOOK_SEARCH_CACHE_HIT_RATE_LIMIT_PER_MINUTE:300}
-    # 캐시 미적중 검색의 카카오 API 단기 호출을 차단하는 회원별 60초 요청 한도임
+    # 캐시 미적중 검색의 외부 API 단기 호출을 차단하는 회원별 60초 요청 한도임
     cache-miss-rate-limit-per-minute: ${BOOK_SEARCH_CACHE_MISS_RATE_LIMIT_PER_MINUTE:60}
     # 캐시 미적중 시에만 차감하며 비활성화와 재로그인으로 초기화되지 않는 회원별 24시간 실제 호출 한도임
     rate-limit-per-day: ${BOOK_SEARCH_RATE_LIMIT_PER_DAY:200}
-    # 카카오의 3만 건 쿼터 중 3천 건을 비상 여유로 남기는 앱 전체 실제 호출 한도임
+    # 공급자별 외부 API 쿼터를 보호하는 앱 전체 실제 호출 한도임
     provider-call-limit-per-day: ${BOOK_SEARCH_PROVIDER_CALL_LIMIT_PER_DAY:27000}
-    # 사용자 식별값 없이 검색어 해시와 50권 페이지로 공유하는 Redis 캐시 유효시간임
+    # 사용자 식별값 없이 공급자와 검색어 해시 및 시작 위치로 공유하는 Redis 캐시 유효시간임
     cache-ttl-seconds: ${BOOK_SEARCH_CACHE_TTL_SECONDS:600}
     # 인기 검색어 합산과 회원별 중복 제한에 사용할 최근 기간임
     popular-keyword-window-days: ${BOOK_SEARCH_POPULAR_KEYWORD_WINDOW_DAYS:7}
@@ -85,6 +85,8 @@ google:
     monthly-character-limit: 500000
     quota-zone: America/Los_Angeles
   books:
+    # 영어 설정 회원의 도서 검색에 사용하는 Google Books Volumes API 주소임
+    url: https://www.googleapis.com/books/v1/volumes
     api-key: ${GOOGLE_BOOKS_API_KEY:}
 
 firebase:

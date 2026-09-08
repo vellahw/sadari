@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.our.sadari.book.dto.KakaoBookJsonDto;
+import org.our.sadari.book.dto.BookSearchResponseDto;
 import org.our.sadari.book.dto.PopularSearchKeywordDto;
 import org.our.sadari.global.common.service.BadWordDetectionService;
 import org.our.sadari.global.common.util.StringUtil;
@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
  * -----------------------------------------------------------
  * 2026-08-16        SeungHyeon.Kang    최초 생성 및 검색 보호 처리
  * 2026-08-28        HanWon.Jang        캐시 유형별 단기 한도 분리
+ * 2026-09-08        HanWon.Jang        검색 공급자별 캐시와 실제 호출 한도 분리
  */
 @Service
 @RequiredArgsConstructor
@@ -56,7 +57,7 @@ public class BookSearchProtectionService {
             end
             return 1
             """;
-    // 회원별 일간 및 앱 전체 카카오 호출 한도를 함께 검사하고 실제 호출 예약만 원자 증가시키는 Lua 스크립트
+    // 회원별 일간 및 공급자별 앱 전체 호출 한도를 함께 검사하고 실제 호출 예약만 원자 증가시키는 Lua 스크립트
     private static final String PROVIDER_LIMIT_LUA = """
             local dailyCount = tonumber(redis.call('GET', KEYS[1]) or '0')
             local providerCount = tonumber(redis.call('GET', KEYS[2]) or '0')
@@ -95,8 +96,8 @@ public class BookSearchProtectionService {
     private static final String CACHE_MISS_MINUTE_LIMIT_KEY_PREFIX = "book:search:rate:minute:cache-miss:";
     // 회원별 일간 도서 검색 요청 횟수 Redis 키 접두사
     private static final String DAILY_LIMIT_KEY_PREFIX = "book:search:rate:day:";
-    // 앱 전체 카카오 도서 검색 실제 호출 횟수 Redis 키
-    private static final String PROVIDER_LIMIT_KEY = "book:search:provider:day";
+    // 앱 전체 공급자별 도서 검색 실제 호출 횟수 Redis 키 접두사
+    private static final String PROVIDER_LIMIT_KEY_PREFIX = "book:search:provider:day:";
     // 검색어 원문을 노출하지 않는 공용 검색 결과 Redis 키 접두사
     private static final String SEARCH_CACHE_KEY_PREFIX = "book:search:cache:";
     // 최근 일자별 인기 검색어 점수 Redis 키 접두사
@@ -143,10 +144,10 @@ public class BookSearchProtectionService {
     // 회원 한 명의 60초간 최대 캐시 미적중 도서 검색 요청 수
     @Value("${book.search.cache-miss-rate-limit-per-minute:60}")
     private int cacheMissRateLimitPerMinute;
-    // 회원 한 명의 24시간 최대 카카오 도서 검색 실제 호출 수
+    // 회원 한 명의 24시간 최대 외부 도서 검색 실제 호출 수
     @Value("${book.search.rate-limit-per-day:200}")
     private int rateLimitPerDay;
-    // 앱 전체의 24시간 최대 카카오 도서 검색 실제 호출 수
+    // 공급자별 앱 전체의 24시간 최대 외부 도서 검색 실제 호출 수
     @Value("${book.search.provider-call-limit-per-day:27000}")
     private int providerCallLimitPerDay;
     // 공용 도서 검색 결과 Redis 캐시 유효시간
@@ -167,7 +168,7 @@ public class BookSearchProtectionService {
 
     // 도서 검색 제한과 캐시를 공유할 Redis 문자열 연산 객체
     private final StringRedisTemplate redisTemplate;
-    // 카카오 도서 검색 캐시 직렬화 객체
+    // 외부 도서 검색 화면 응답 캐시 직렬화 객체
     private final ObjectMapper objectMapper;
     // 검색은 허용하면서 인기 검색어 노출만 제한할 비속어 판정 서비스
     private final BadWordDetectionService badWordDetectionService;
@@ -187,7 +188,7 @@ public class BookSearchProtectionService {
             return false;
         }
 
-        // Redis 장애 시 카카오 쿼터가 무방비로 소모되지 않도록 검색 요청을 차단함
+        // Redis 장애 시 외부 공급자 쿼터가 무방비로 소모되지 않도록 검색 요청을 차단함
         try {
             // 캐시 유형에 맞는 한 회원의 분간 요청 제한값을 선택함
             int rateLimit = cacheHit ? cacheHitRateLimitPerMinute : cacheMissRateLimitPerMinute;
@@ -205,31 +206,32 @@ public class BookSearchProtectionService {
         catch (RuntimeException e) {
             // Redis 제한을 확인하지 못한 원인을 예외 정보와 함께 기록함
             log.error("도서 검색 회원별 요청 제한을 확인하지 못했습니다.", e);
-            // 제한을 확인하지 못한 요청을 카카오 호출 전에 차단함
+            // 제한을 확인하지 못한 요청을 외부 공급자 호출 전에 차단함
             return false;
         }
     }
 
     /**
-     * 캐시 미적중 회원과 앱 전체의 카카오 도서 검색 실제 호출 한도를 함께 예약함
+     * 캐시 미적중 회원과 공급자별 앱 전체 도서 검색 실제 호출 한도를 함께 예약함
      *
      * @author HanWon.Jang
-     * @param userNumb 카카오 도서 검색 실제 호출을 요청한 로그인 회원 번호
+     * @param userNumb 외부 도서 검색 실제 호출을 요청한 로그인 회원 번호
+     * @param provider 호출할 외부 도서 검색 공급자 코드
      * @return 회원별 일간 및 앱 전체 외부 호출 한도 안에서 예약된 요청 여부
      */
-    public boolean reserveProviderCall(Long userNumb) {
-        // 인증되지 않은 요청은 회원별 일간 한도와 카카오 쿼터를 사용할 수 없도록 차단함
-        if (StringUtil.isEmpty(userNumb)) {
+    public boolean reserveProviderCall(Long userNumb, String provider) {
+        // 인증되지 않았거나 공급자가 없는 요청은 회원별 일간 한도와 공급자 쿼터를 사용할 수 없도록 차단함
+        if (StringUtil.hasEmpty(userNumb, provider)) {
             // 회원 식별값이 없는 외부 호출 예약을 거절함
             return false;
         }
 
-        // Redis 장애 시 회원별 일간 및 카카오 전체 보호 한도를 우회하지 않도록 차단함
+        // Redis 장애 시 회원별 일간 및 공급자별 전체 보호 한도를 우회하지 않도록 차단함
         try {
             // 회원별 일간 및 앱 전체 실제 호출 횟수를 한 번의 Redis 명령으로 예약함
             Long result = redisTemplate.execute(
                     PROVIDER_LIMIT_SCRIPT
-                  , List.of(getDailyLimitKey(userNumb), PROVIDER_LIMIT_KEY)
+                  , List.of(getDailyLimitKey(userNumb), getProviderLimitKey(provider))
                   , String.valueOf(rateLimitPerDay), String.valueOf(providerCallLimitPerDay)
                   , String.valueOf(DAILY_LIMIT_TTL_SECONDS)
             );
@@ -240,61 +242,63 @@ public class BookSearchProtectionService {
         // 회원별 또는 앱 전체 보호 카운터 장애는 쿼터 소모 없이 운영 로그로 남김
         catch (RuntimeException e) {
             // Redis 일간 호출 한도를 확인하지 못한 원인을 예외 정보와 함께 기록함
-            log.error("도서 검색 회원별 및 카카오 일일 호출 한도를 확인하지 못했습니다.", e);
-            // 보호 한도를 확인하지 못한 카카오 호출을 차단함
+            log.error("도서 검색 회원별 및 공급자별 일일 호출 한도를 확인하지 못했습니다.", e);
+            // 보호 한도를 확인하지 못한 외부 공급자 호출을 차단함
             return false;
         }
     }
 
     /**
-     * 검색어와 카카오 페이지가 같은 공용 검색 결과를 Redis에서 조회함
+     * 공급자와 검색어 및 시작 위치가 같은 공용 검색 결과를 Redis에서 조회함
      *
      * @author SeungHyeon.Kang
+     * @param provider 외부 도서 검색 공급자 코드
      * @param query 사용자가 입력한 도서 검색어
-     * @param page 카카오 도서 검색 페이지 번호
-     * @return 역직렬화된 카카오 도서 검색 결과 또는 캐시 누락값
+     * @param start 화면 검색 시작 위치
+     * @return 역직렬화된 화면 검색 결과 또는 캐시 누락값
      */
-    public KakaoBookJsonDto getCachedSearch(String query, int page) {
+    public BookSearchResponseDto getCachedSearch(String provider, String query, int start) {
         // Redis 조회나 캐시 역직렬화 오류가 원문 검색어를 노출하지 않도록 공통 실패 경로로 격리함
         try {
             // 검색어 해시와 페이지로 구성한 공용 캐시 값을 조회함
-            String cachedJson = redisTemplate.opsForValue().get(getCacheKey(query, page));
+            String cachedJson = redisTemplate.opsForValue().get(getCacheKey(provider, query, start));
 
-            // 저장된 검색 결과가 없으면 카카오 API 호출이 필요함을 반환함
+            // 저장된 검색 결과가 없으면 외부 공급자 API 호출이 필요함을 반환함
             if (StringUtil.isEmpty(cachedJson)) {
                 // 공용 검색 캐시 누락값을 반환함
                 return null;
             }
 
-            // 캐시 JSON을 카카오 도서 검색 응답 DTO로 복원함
-            return objectMapper.readValue(cachedJson, KakaoBookJsonDto.class);
+            // 캐시 JSON을 화면 도서 검색 응답 DTO로 복원함
+            return objectMapper.readValue(cachedJson, BookSearchResponseDto.class);
         }
 
         // 손상된 캐시나 Redis 장애는 외부 호출 예약 단계가 처리하도록 캐시 누락으로 전환함
         catch (RuntimeException | JsonProcessingException e) {
             // 검색어 원문 없이 공용 캐시 조회 실패 원인을 기록함
-            log.error("카카오 도서 검색 공용 캐시를 조회하지 못했습니다.", e);
+            log.error("외부 도서 검색 공용 캐시를 조회하지 못했습니다.", e);
             // 복원할 수 없는 공용 검색 캐시를 사용하지 않음
             return null;
         }
     }
 
     /**
-     * 카카오 도서 검색 결과를 사용자와 연결하지 않은 공용 Redis 캐시에 저장함
+     * 외부 도서 검색 결과를 사용자와 연결하지 않은 공용 Redis 캐시에 저장함
      *
      * @author SeungHyeon.Kang
+     * @param provider 외부 도서 검색 공급자 코드
      * @param query 사용자가 입력한 도서 검색어
-     * @param page 카카오 도서 검색 페이지 번호
-     * @param searchResult 카카오에서 받은 도서 검색 결과
+     * @param start 화면 검색 시작 위치
+     * @param searchResult 화면 계약으로 변환한 도서 검색 결과
      */
-    public void setCachedSearch(String query, int page, KakaoBookJsonDto searchResult) {
-        // 캐시 실패가 이미 완료된 카카오 검색 응답을 사용자에게 반환하지 못하게 하지 않도록 격리함
+    public void setCachedSearch(String provider, String query, int start, BookSearchResponseDto searchResult) {
+        // 캐시 실패가 이미 완료된 외부 검색 응답을 사용자에게 반환하지 못하게 하지 않도록 격리함
         try {
-            // 카카오 도서 검색 응답을 Redis 저장 문자열로 직렬화함
+            // 화면 도서 검색 응답을 Redis 저장 문자열로 직렬화함
             String cachedJson = objectMapper.writeValueAsString(searchResult);
             // 사용자 식별값 없는 공용 검색 결과를 설정된 짧은 유효시간 동안 저장함
             redisTemplate.opsForValue().set(
-                    getCacheKey(query, page)
+                    getCacheKey(provider, query, start)
                   , cachedJson
                   , Duration.ofSeconds(cacheTtlSeconds)
             );
@@ -303,7 +307,7 @@ public class BookSearchProtectionService {
         // 공용 캐시 저장 실패는 쿼터 보호 카운터를 되돌리지 않고 운영 로그에만 기록함
         catch (RuntimeException | JsonProcessingException e) {
             // 검색어 원문 없이 공용 캐시 저장 실패 원인을 기록함
-            log.error("카카오 도서 검색 공용 캐시를 저장하지 못했습니다.", e);
+            log.error("외부 도서 검색 공용 캐시를 저장하지 못했습니다.", e);
         }
     }
 
@@ -504,6 +508,18 @@ public class BookSearchProtectionService {
     }
 
     /**
+     * 공급자별 앱 전체 도서 검색 실제 호출 Redis 키를 생성함
+     *
+     * @author HanWon.Jang
+     * @param provider 외부 도서 검색 공급자 코드
+     * @return 공급자별 앱 전체 일간 실제 호출 Redis 키
+     */
+    private String getProviderLimitKey(String provider) {
+        // 공급자 코드 표기 차이로 호출 한도가 분리되지 않도록 소문자로 정규화함
+        return PROVIDER_LIMIT_KEY_PREFIX + provider.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
      * 인기 검색어 노출과 집계에 사용할 검색어를 정규화함
      *
      * @author SeungHyeon.Kang
@@ -596,18 +612,19 @@ public class BookSearchProtectionService {
     }
 
     /**
-     * 검색어 원문 대신 SHA-256 해시와 페이지를 사용하는 공용 캐시 키를 생성함
+     * 검색어 원문 대신 공급자와 시작 위치를 포함한 SHA-256 해시로 공용 캐시 키를 생성함
      *
      * @author SeungHyeon.Kang
+     * @param provider 외부 도서 검색 공급자 코드
      * @param query 사용자가 입력한 도서 검색어
-     * @param page 카카오 도서 검색 페이지 번호
+     * @param start 화면 검색 시작 위치
      * @return 검색어 원문을 포함하지 않는 공용 캐시 Redis 키
      */
-    private String getCacheKey(String query, int page) {
+    private String getCacheKey(String provider, String query, int start) {
         // 대소문자와 연속 공백 차이로 같은 검색이 중복 저장되지 않도록 검색어를 정규화함
         String normalizedQuery = query.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
-        // 같은 검색어의 페이지별 캐시가 충돌하지 않도록 페이지를 해시 입력에 포함함
-        String cacheHash = getSha256(normalizedQuery + ":" + page);
+        // 공급자와 시작 위치가 다른 검색 결과가 충돌하지 않도록 해시 입력에 함께 포함함
+        String cacheHash = getSha256(provider.trim().toLowerCase(Locale.ROOT) + ":" + normalizedQuery + ":" + start);
         // 검색어 원문이 없는 16진수 해시 Redis 키를 반환함
         return SEARCH_CACHE_KEY_PREFIX + cacheHash;
     }

@@ -50,7 +50,7 @@ Sadari는 독서 기록, 목표, 소셜 활동과 독서 모임을 연결한 Rea
 
 | 영역 | 사용자 기능 | 주요 구현 |
 | --- | --- | --- |
-| 도서 | 기간별 인기 도서와 Kakao 도서 검색 및 표지 색상 탐색 | [고유 작성자 기준 인기 순위, 50권 선조회·10권 분할 표시와 Redis 쿼터 보호](docs/technical-review/book-search-and-ranking.md) |
+| 도서 | 기간별 인기 도서와 언어별 Kakao·Google Books 검색 및 표지 색상 탐색 | [계정 언어 공급자 전환, 공급자별 40·50권 선조회와 Redis 쿼터 보호](docs/technical-review/book-search-and-ranking.md) |
 | 독서 기록 | 읽기 상태, 별점, 독후감, 기간별 독서량 | [도서·독후감 원자적 등록, 상태별 저장 정책과 편집 충돌 감지](docs/technical-review/reading-report-transaction.md) |
 | 독서 목표 | 주간·월간·연간 목표와 달성 현황 | [ISO 기간 경계, 이전 목표 복사와 조건부 집계](docs/technical-review/reading-goal-aggregation.md) |
 | 소셜 | 프로필, 팔로우, 좋아요와 댓글 | [본인·타인 공개 범위 분리, 대상 유형 검증과 차단 관계](docs/technical-review/social-feed-reactions.md) |
@@ -64,7 +64,7 @@ Sadari는 독서 기록, 목표, 소셜 활동과 독서 모임을 연결한 Rea
 
 [![Sadari 전체 아키텍처](docs/architecture/assets/sadari-architecture-overview.svg)](docs/architecture/assets/sadari-architecture-overview.svg)
 
-외부 플랫폼 중 Google Cloud Translation API는 공개 독후감의 요청 시점 번역과 캐시에 사용합니다. Google Books API는 영문 도서 검색과 영문 도서 정보 제공을 위한 다음 연동 대상으로 표시했습니다.
+외부 플랫폼 중 Google Cloud Translation API는 공개 독후감의 요청 시점 번역과 캐시에 사용합니다. 도서 검색은 한국어 설정에서 Kakao, 영어 설정에서 Google Books API를 사용합니다.
 
 [전체 데이터베이스 ERD](docs/architecture/database-erd/README.md)에서 현재 DDL 기준 테이블·컬럼·관계와 영역별 구조를 확인할 수 있습니다.
 
@@ -169,7 +169,7 @@ DB 트랜잭션 안에서 파일 저장과 푸시 발송까지 성공한 것으�
 
 ### 7. 외부 API 쿼터를 Redis 방어 계층으로 보호
 
-카카오 도서 검색은 반환 권수가 아니라 요청 횟수로 일일 쿼터가 차감됩니다. 서버가 최대 50권을 선조회하고 프론트엔드가 10권씩 표시해, 50권 확인에 필요한 호출을 최대 5회에서 1회로 줄였습니다.
+도서 검색은 계정 언어가 한국어이면 Kakao에서 최대 50권, 영어이면 Google Books에서 최대 40권을 선조회합니다. 프론트엔드는 받아 둔 결과를 10권씩 표시하며, 공급자·검색어·페이지별 Redis 캐시로 반복 외부 호출을 줄입니다.
 
 검색 전에는 `TM_REPORT`의 도서별 고유 작성자 수를 집계한 주간·월간·연간 인기 도서 10권과 평균 평점을 표시합니다. 회원·독서 상태와 공개 여부는 순위 조건에서 제외하며, 직접 검색 결과에는 같은 카드 UI에서 기간·순위·평점 대신 출판사와 도서 소개를 표시합니다.
 
@@ -182,7 +182,7 @@ DB 트랜잭션 안에서 파일 저장과 푸시 발송까지 성공한 것으�
 - Redis 장애 시 검색을 차단해 외부 쿼터의 무방비 소모를 막습니다.
 - 회원 비활성화와 탈퇴 신청으로 카운터가 초기화되지 않으며 물리 삭제 시에만 회원별 제한 키를 정리합니다.
 
-`5회 → 1회`는 요청당 10권과 50권의 소스 호출 구조로 계산한 값이며 응답 시간 실측 결과는 아닙니다.
+Kakao의 `5회 → 1회`와 Google Books의 `4회 → 1회`는 화면 표시 10권과 공급자별 선조회 건수의 소스 호출 구조로 계산한 값이며 응답 시간 실측 결과는 아닙니다.
 
 - [도서 검색 쿼터 보호 정책](docs/policies/book-search-policy.md)
 - [도서 검색 보호 서비스](src/main/java/org/our/sadari/book/service/BookSearchProtectionService.java)

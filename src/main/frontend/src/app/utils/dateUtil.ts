@@ -127,11 +127,11 @@ export function getRemainPeriodRate(startValue?: string, endValue?: string) {
 }
 
 /**
- * 8자리 숫자 형태의 날짜 문자열을 해석하여 개별 연, 월, 일 정보 및 Date 객체로 변환함
+ * 4자리, 6자리 또는 8자리 숫자 날짜를 원본 정밀도에 맞게 해석함
  *
  * @author HanWon.Jang
- * @param value 파싱할 8자리 압축 날짜 문자열 (예: "20260715")
- * @return 연, 월, 일 정보 및 생성된 Date 객체를 포함하는 오브젝트 (유효하지 않은 입력값인 경우 null 반환)
+ * @param value 파싱할 압축 날짜 문자열 (예: "2026", "202607", "20260715")
+ * @return 연, 월, 일 정보와 원본 정밀도 및 Date 객체를 포함하는 값 또는 유효하지 않을 때 null
  */
 function parseCompactDateParts(value?: string) {
   // 전달된 값이 없는 경우 바로 연산을 중단하여 무의미한 정규식 파싱을 차단함
@@ -141,13 +141,33 @@ function parseCompactDateParts(value?: string) {
 
   const compactDate = value.replace(/\D/g, "");
 
-  // 연월일 8자리(YYYYMMDD) 구성 요건을 만족하지 못하면 파싱 대상에서 제외함
-  if (compactDate.length !== 8) {
+  // Google Books 부분 날짜와 기존 연월일 외 길이는 파싱 대상에서 제외함
+  if (![4, 6, 8].includes(compactDate.length)) {
     return null;
   }
 
   const year = Number(compactDate.slice(0, 4));
+  // 유효한 연도가 아니면 날짜 표시 대상에서 제외함
+  if (!year) {
+    return null;
+  }
+
+  // 연도만 제공된 도서는 존재하지 않는 월과 일을 만들지 않음
+  if (compactDate.length === 4) {
+    return { year, month: null, day: null, date: null };
+  }
+
   const month = Number(compactDate.slice(4, 6));
+  // 달력 범위를 벗어난 월은 날짜 표시 대상에서 제외함
+  if (month < 1 || month > 12) {
+    return null;
+  }
+
+  // 연월만 제공된 도서는 존재하지 않는 일을 만들지 않음
+  if (compactDate.length === 6) {
+    return { year, month, day: null, date: null };
+  }
+
   const day = Number(compactDate.slice(6, 8));
   const date = new Date(year, month - 1, day);
 
@@ -190,11 +210,11 @@ function getEnglishOrdinalSuffix(day: number) {
 }
 
 /**
- * 8자리 날짜 문자열을 한국어 표준 날짜 표기 형식으로 변환함
+ * 압축 날짜 문자열을 원본 정밀도에 맞는 한국어 날짜로 변환함
  *
  * @author HanWon.Jang
- * @param value 8자리 날짜 문자열 (예: "20260715")
- * @return "YYYY년 MM월 DD일" 포맷의 한글 날짜 문자열 (파싱 불가 시 원본 반환)
+ * @param value 4자리, 6자리 또는 8자리 날짜 문자열
+ * @return 원본 정밀도를 유지한 한국어 날짜 문자열 또는 파싱 불가 시 원본
  */
 export function formatCompactDateToKorean(value?: string) {
 
@@ -208,15 +228,25 @@ export function formatCompactDateToKorean(value?: string) {
     return value;
   }
 
+  // 연도만 제공된 값은 연도까지만 표시함
+  if (parsedDate.month === null) {
+    return `${parsedDate.year}\uB144`;
+  }
+
+  // 연월만 제공된 값은 존재하지 않는 일을 붙이지 않음
+  if (parsedDate.day === null) {
+    return `${parsedDate.year}\uB144 ${parsedDate.month}\uC6D4`;
+  }
+
   return `${parsedDate.year}\uB144${parsedDate.month}\uC6D4${parsedDate.day}\uC77C`;
 }
 
 /**
- * 8자리 날짜 문자열을 영어 표준 날짜 표기 형식으로 변환함
+ * 압축 날짜 문자열을 원본 정밀도에 맞는 영어 날짜로 변환함
  *
  * @author HanWon.Jang
- * @param value 8자리 날짜 문자열 (예: "20260715")
- * @return "Month DDth, YYYY" 포맷의 영문 날짜 문자열 (파싱 불가 시 원본 반환)
+ * @param value 4자리, 6자리 또는 8자리 날짜 문자열
+ * @return 원본 정밀도를 유지한 영어 날짜 문자열 또는 파싱 불가 시 원본
  */
 export function formatCompactDateEnglish(value?: string) {
 
@@ -230,20 +260,30 @@ export function formatCompactDateEnglish(value?: string) {
     return value;
   }
 
+  // 연도만 제공된 값은 연도까지만 표시함
+  if (parsedDate.month === null) {
+    return String(parsedDate.year);
+  }
+
   // 다국어 확장을 고려하여 바닐라 JS의 Intl API를 통해 영문 전체 월 명칭을 동적으로 획득함
   const monthName = new Intl.DateTimeFormat("en", { month: "long" }).format(
-      parsedDate.date,
+    new Date(parsedDate.year, parsedDate.month - 1, 1),
   );
+
+  // 연월만 제공된 값은 존재하지 않는 일을 붙이지 않음
+  if (parsedDate.day === null) {
+    return `${monthName} ${parsedDate.year}`;
+  }
 
   return `${monthName} ${parsedDate.day}${getEnglishOrdinalSuffix(parsedDate.day)}, ${parsedDate.year}`;
 }
 
 /**
- * 브라우저 로케일에 맞춰 8자리 압축 날짜 형식을 한글 또는 영문 날짜 형식으로 동적 포맷팅함
+ * 계정 표시 언어에 맞춰 부분 날짜를 포함한 압축 날짜를 동적으로 포맷팅함
  *
  * @author HanWon.Jang
- * @param value 8자리 날짜 문자열 (예: "20260715")
- * @return 로케일 판단에 맞춰 변형된 로컬 날짜 문자열
+ * @param value 4자리, 6자리 또는 8자리 날짜 문자열
+ * @return 원본 날짜 정밀도와 계정 언어를 반영한 날짜 문자열
  */
 export const formatCompactDate = (value?: string) => {
 

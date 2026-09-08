@@ -54,20 +54,20 @@ public class BookController {
     private final ReportService reportService;
 
     /**
-     * 검색어와 검색 시작 위치를 사용하여 카카오 도서 API의 도서 목록을 검색함
+     * 검색어와 검색 시작 위치를 사용하여 계정 언어에 맞는 외부 도서 목록을 검색함
      *
      * @author SeungHyeon.Kang
      * @param userNumb 도서 검색을 요청한 로그인 회원 번호
-     * @param query 카카오 도서 API에 전달할 검색어
+     * @param query 계정 언어에 맞는 외부 도서 API에 전달할 검색어
      * @param start 기존 화면 계약에서 사용하는 검색 결과 시작 위치
      * @return 검색된 도서 목록
      */
     @GetMapping("/search")
-    @Operation(summary = "도서 검색", description = "로그인 회원의 요청 횟수를 제한하고 카카오 도서 API에서 최대 50권을 조회한다.")
+    @Operation(summary = "도서 검색", description = "로그인 회원의 요청 횟수를 제한하고 한국어 설정은 카카오, 영어 설정은 Google Books에서 도서를 조회한다.")
     public ResultData searchBooks(@Parameter(hidden = true) @AuthenticationPrincipal Long userNumb
                                 , @Parameter(description = "도서 검색어", example = "히가시노 게이고") @RequestParam("query") String query
-                                , @Parameter(description = "50권 페이지의 검색 시작 위치", example = "1") @RequestParam(value = "start", defaultValue = "1") int start) {
-        // 로그인 회원과 검색어 및 50권 페이지 시작 위치로 카카오 도서 목록을 조회함
+                                , @Parameter(description = "공급자 페이지의 검색 시작 위치", example = "1") @RequestParam(value = "start", defaultValue = "1") int start) {
+        // 로그인 회원과 검색어 및 시작 위치로 계정 언어에 맞는 도서 목록을 조회함
         return bookSearchService.searchBooks(userNumb, query, start);
     }
 

@@ -72,8 +72,8 @@
 | `TIMER_DETAIL_RETENTION_DAYS` | `365` | 완료된 독서 타이머 세션 상세 보존기간(일) |
 | `BOOK_SEARCH_CACHE_HIT_RATE_LIMIT_PER_MINUTE` | `300` | 회원별 60초 캐시 적중 도서 검색 요청 한도 |
 | `BOOK_SEARCH_CACHE_MISS_RATE_LIMIT_PER_MINUTE` | `60` | 회원별 60초 캐시 미적중 도서 검색 요청 한도 |
-| `BOOK_SEARCH_RATE_LIMIT_PER_DAY` | `200` | 캐시 미적중 시 차감하는 회원별 24시간 카카오 도서 검색 실제 호출 한도 |
-| `BOOK_SEARCH_PROVIDER_CALL_LIMIT_PER_DAY` | `27000` | 비상 쿼터를 제외한 앱 전체 24시간 카카오 도서 검색 실제 호출 한도 |
+| `BOOK_SEARCH_RATE_LIMIT_PER_DAY` | `200` | 캐시 미적중 시 차감하는 회원별 24시간 외부 도서 검색 실제 호출 한도 |
+| `BOOK_SEARCH_PROVIDER_CALL_LIMIT_PER_DAY` | `27000` | 공급자별 앱 전체 24시간 외부 도서 검색 실제 호출 보호 한도 |
 | `BOOK_SEARCH_CACHE_TTL_SECONDS` | `600` | 사용자와 연결하지 않은 도서 검색 결과 Redis 캐시 유효시간(초) |
 | `BOOK_SEARCH_POPULAR_KEYWORD_WINDOW_DAYS` | `7` | 인기 검색어 점수 합산과 회원별 동일 검색어 중복 제한 기간(일) |
 | `BOOK_SEARCH_POPULAR_KEYWORD_MIN_USER_COUNT` | `3` | 인기 검색어 공용 화면 노출에 필요한 최소 고유 회원 수 |
@@ -125,10 +125,10 @@
   GitHub Actions Secret으로 전달합니다.
 - 로컬과 운영의 `book.search.url`은 종료된 네이버 도서 API의 대체 공급자인 카카오 도서 검색
   `https://dapi.kakao.com/v3/search/book`으로 고정하며 인증에는 기존 `KAKAO_REST_API_KEY` Secret을 사용합니다.
-- Google 번역은 `GOOGLE_TRANSLATION_API_KEY`가 있을 때 활성화하고, 키가 없으면 기존 번역 캐시만 표시하며 신규 번역 버튼은 숨깁니다. Google 도서 검색 연동 전까지 `GOOGLE_BOOKS_API_KEY`는 빈 값이어도 실행할 수 있습니다.
+- Google 번역은 `GOOGLE_TRANSLATION_API_KEY`가 있을 때 활성화하고, 키가 없으면 기존 번역 캐시만 표시하며 신규 번역 버튼은 숨깁니다. 영어 설정의 도서 검색에는 `GOOGLE_BOOKS_API_KEY`가 필요하며 키가 없으면 외부 요청 없이 검색 실패 응답을 반환합니다.
 - Google Cloud Console의 `API 및 서비스 > 사용자 인증 정보`에서 `sadari-translation-server` 값은 `GOOGLE_TRANSLATION_API_KEY`, `sadari-books-server` 값은 `GOOGLE_BOOKS_API_KEY`에 각각 등록합니다.
 - Google 번역은 Cloud Translation Basic v2 서버 주소를 사용하고 앱 전체 월간 신규 번역을 500,000 유니코드 코드 포인트로 고정합니다. 월간 경계는 Google 쿼터 기준 시간대와 맞추며, Redis에서 사용량을 확인할 수 없으면 신규 Google 호출을 중단합니다.
-- 운영 도서 검색은 요청당 최대 50권을 조회하며 캐시 적중 300회·미적중 60회의 회원별 60초 제한, 회원별 일간 제한, 앱 전체 실제 호출 제한과 10분 공용 캐시를 Redis에서 관리합니다.
+- 운영 도서 검색은 한국어 Kakao에서 최대 50권, 영어 Google Books에서 최대 40권을 조회하며 캐시 적중 300회·미적중 60회의 회원별 60초 제한, 회원별 일간 제한, 공급자별 앱 전체 실제 호출 제한과 10분 공용 캐시를 Redis에서 관리합니다.
 - 도서 인기 검색어는 최근 7일의 일별 Redis 점수를 합산하고 동일 회원의 같은 검색어를 기간 내 한 번만 반영하며 최소 3명 이상인 상위 10건을 제공합니다.
 - 운영의 `book.search.popular-keyword-user-dedup-enabled`는 순위 조작 방지를 위해 `true`로 고정하며 환경변수로 노출하지 않습니다.
 - 로컬의 `book.search.popular-keyword-user-dedup-enabled`는 한 계정의 반복 검색으로 화면을 검증할 수 있도록 `false`를 사용하고 최소 노출 인원은 `1`로 설정합니다.

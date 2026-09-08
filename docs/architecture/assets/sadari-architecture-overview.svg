@@ -132,7 +132,7 @@
     <circle cx="1485" cy="814" r="17" fill="#4285F4"/>
     <text x="1485" y="820" text-anchor="middle" font-size="18" font-weight="800" fill="#FFFFFF">G</text>
     <text x="1507" y="807" class="badge-title">Google Books API</text>
-    <text x="1507" y="827" class="badge-detail">영문 도서 검색 · 연동 예정</text>
+    <text x="1507" y="827" class="badge-detail">영문 도서 검색 · 적용</text>
   </g>
   <g>
     <rect x="1690" y="785" width="220" height="58" rx="14" class="badge"/>

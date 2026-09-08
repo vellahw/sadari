@@ -38,9 +38,6 @@ public class ReportDto extends BookDto {
     @Schema(description = "독후감 번호", example = "1")
     private Long reptNumb;
 
-    @Schema(description = "독후감 작성 언어 코드", example = "ko", allowableValues = {"ko", "en"})
-    private String langCode;
-
     @JsonIgnore
     @Schema(hidden = true)
     private String trnsCacheYsno;

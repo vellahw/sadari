@@ -170,7 +170,7 @@ public ResultData uptReport(Long userNumb, Long reptNumb, ReportDto reportDto) {
 
 데이터베이스 작업이 예외를 던지면 Spring 트랜잭션이 롤백합니다. 다만 `reportMapper.setReport`가 예외 없이 끝났는데 생성 키만 비어 있는 비정상 상황에서는 현재 코드가 실패 결과를 반환할 뿐 명시적으로 롤백 전용 상태를 표시하지 않습니다. Mapper 계약상 발생하지 않아야 하지만 방어 수준을 높이려면 예외를 던지거나 현재 트랜잭션을 rollback-only로 표시하는 편이 안전합니다.
 
-또한 도서 구조는 언어 구분을 수용하지만, 현재 기존 도서를 찾는 Mapper 호출은 ISBN만 사용합니다. 동일 ISBN의 언어별 메타데이터를 따로 저장하려면 도서 검색 연동 전에 조회 조건을 ISBN과 언어의 조합으로 변경해야 합니다.
+도서 구조와 Mapper는 ISBN과 언어의 조합으로 기존 도서를 찾습니다. 따라서 동일 ISBN의 한국어·영어 메타데이터는 서로 다른 내부 도서 번호로 저장하면서, 평점 조회는 기존 ISBN 기준 합산 정책을 유지합니다.
 
 ## 관련 소스
 

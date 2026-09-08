@@ -1,6 +1,7 @@
 package org.our.sadari.book.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
  * -----------------------------------------------------------
  * 2026-07-17        SeungHyeon.Kang    최초 생성
  * 2026-07-28        SeungHyeon.Kang    DTO 문서화 규칙 정비
+ * 2026-09-08        HanWon.Jang        도서 정보 언어 코드 추가
  */
 @Data
 @AllArgsConstructor
@@ -42,6 +44,10 @@ public class BookDto {
     @Schema(description = "ISBN", example = "9788990982704")
     @Size(max = 100)
     private String bookIsbn;
+
+    @Schema(description = "도서 정보 언어 코드", example = "en", allowableValues = {"ko", "en"})
+    @Pattern(regexp = "ko|en")
+    private String langCode;
 
     @Schema(description = "도서 표지 이미지 URL")
     @Size(max = 1000)

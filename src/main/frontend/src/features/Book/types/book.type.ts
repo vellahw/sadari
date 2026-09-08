@@ -8,10 +8,11 @@
  * -----------------------------------------------------------
  * 2026-04-02       HanWon.Jang       최초 생성
  * 2026-08-16       SeungHyeon.Kang   도서 인기 검색어 응답 타입 추가
+ * 2026-09-08       HanWon.Jang       언어별 외부 도서 검색 결과 타입 반영
  */
 
 /**
- * 카카오 도서 검색 결과를 화면 계약으로 변환한 타입
+ * 언어별 외부 도서 검색 결과를 화면 계약으로 변환한 타입
  */
 export interface BookSearchResultType {
   // 기간별 인기 도서에서만 전달되는 1부터 시작하는 순위
@@ -28,9 +29,11 @@ export interface BookSearchResultType {
   publisher: string;
   // 책 isbn
   isbn: string;
+  // 검색 공급자가 반환한 도서 정보 언어 코드
+  langCode?: "ko" | "en";
   // 책 표지 이미지
   image: string;
-  // 원본 표지 로드 실패 시 사용할 카카오 썸네일 이미지
+  // 원본 표지 로드 실패 시 사용할 공급자 썸네일 이미지
   thumbnailImage?: string;
   // 책 소개 내용
   description: string;
@@ -52,14 +55,14 @@ export interface PopularSearchKeywordType {
 }
 
 /**
- * 카카오 도서 검색의 50권 페이지와 다음 조회 상태 타입
+ * 언어별 외부 도서 검색 페이지와 다음 조회 상태 타입
  */
 export interface BookSearchPageType {
-  // 카카오 API에서 한 번에 조회한 최대 50권의 도서 목록
+  // 현재 언어의 외부 API에서 한 번에 조회한 도서 목록
   bookList: BookSearchResultType[];
-  // 현재 응답이 카카오 도서 검색의 마지막 페이지인지 나타내는 값
+  // 현재 응답이 외부 도서 검색의 마지막 페이지인지 나타내는 값
   end: boolean;
-  // 다음 50권을 조회할 검색 결과 시작 위치
+  // 다음 공급자 페이지를 조회할 검색 결과 시작 위치
   nextStart?: number | null;
 }
 
@@ -132,6 +135,8 @@ export interface ReportDtoType {
   bookPubl: string;
   // 책 isbn
   bookIsbn: string;
+  // 선택한 도서 정보와 독후감 원문의 언어 코드
+  langCode?: "ko" | "en";
   // 책 표지 이미지
   bookCvim: string;
   // 책 소개 내용
