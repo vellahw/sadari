@@ -13,8 +13,10 @@ export const page = style({
 
 // 공통 Container 여백을 상쇄해 홈과 같은 화면 위치에 검색 입력을 배치함
 export const userSearchBar = style({
-  width: "calc(100% + 32px)",
-  marginLeft: "-16px",
+  // width: "calc(100% + 32px)",
+  // marginLeft: "-16px",
+  margin: "0 auto 18px",
+  padding: 0,
 });
 
 // 피드 검색어 지우기 버튼을 검색 아이콘과 분리하고 기본 크기보다 조금 크게 표시함
@@ -36,7 +38,10 @@ export const userSearchList = style({
 });
 
 // 피드 카드가 일정한 간격으로 누적되는 목록 배치를 정의함
-export const list = style({display: "grid", gap: "14px"});
+export const list = style({
+  display: "grid",
+  gap: "24px"
+});
 
 // 피드 유형별 콘텐츠를 담는 공통 카드 표면을 정의함
 export const card = style({
