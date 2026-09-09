@@ -73,6 +73,7 @@ export const bookSummary = style({
 
 export const bookIdentity = style({
   display: "flex",
+  width: "100%",
   minWidth: 0,
   flexDirection: "column",
   gap: 4,
