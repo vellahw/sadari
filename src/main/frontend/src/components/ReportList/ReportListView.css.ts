@@ -271,7 +271,7 @@ export const reportContentWrapOpen = style([
 
 export const reportContent = style({
   margin: 0,
-  color: "#565656",
+  color: vars.color.gray600,
   fontFamily: vars.font.body,
   fontSize: "16px",
   lineHeight: "1.45",

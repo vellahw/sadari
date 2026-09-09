@@ -1,6 +1,7 @@
 import { getApiErrorMessage } from "@/app/api/resultData";
 import { sweetConfirm, sweetError } from "@/app/lib/sweetAlert/sweetAlert";
 import { message } from "@/app/messages/message";
+import { formatDashedDateToDot, formatDateValue } from "@/app/utils/dateUtil";
 import BackgroundImage from "@/components/BackgroundImage/BackgroundImage";
 import { FullscreenImageButton } from "@/components/ImageViewer/FullscreenImageViewer";
 import InfiniteScrollTrigger from "@/components/InfiniteScroll/InfiniteScrollTrigger";
@@ -1159,7 +1160,7 @@ const FeedPage = () => {
       /* 피드 개별 활동 카드 영역 */
       <article className={styles.card} key={`${item.tagtType}-${item.tagtNumb}`}>
         {/* 피드 작성자 프로필 이동 영역 */}
-        <header className={styles.cardHeader}>
+        <header className={clsx(styles.cardHeader, isReportFeed && styles.reportHeader)}>
           <button className={styles.authorButton} type="button" onClick={moveAuthorProfile}>
             {/* 활동 작성자의 프로필 사진과 닉네임 영역 */}
             <span className={styles.authorIdentity}>
@@ -1197,15 +1198,15 @@ const FeedPage = () => {
             </Link>
             {/* 도서 제목과 저자 및 독후감 상태 영역 */}
             <div className={styles.mediaInfo}>
-              <Link
-                className={styles.bookInfoLink}
-                to={bookTargetPath}
-                state={{ initialSearchKeyword: bookTitleKeyword }}
-              >
-                <span className={styles.title}>{item.bookTitl}</span>
-              </Link>
-              {/* 도서 저자와 독후감 공개 날짜 영역 */}
-              <div className={styles.bookAuthorRow}>
+              {/* 도서 제목과 저자 영역 */}
+              <div className={styles.bookIdentity}>
+                <Link
+                  className={styles.bookInfoLink}
+                  to={bookTargetPath}
+                  state={{ initialSearchKeyword: bookTitleKeyword }}
+                >
+                  <span className={styles.title}>{item.bookTitl}</span>
+                </Link>
                 {/* 저자명이 있으면 해당 이름으로 도서를 검색하는 링크를 표시함 */}
                 {bookAuthorKeyword ? (
                   <Link
@@ -1216,32 +1217,25 @@ const FeedPage = () => {
                     {item.bookAthr}
                   </Link>
                 ) : null}
-                {/* 독후감 공개 날짜를 도서 저자 바로 옆에 표시함 */}
-                <span className={styles.activityDate}>{activityDateLabel}</span>
               </div>
+              {/* 독후감 공개 날짜 영역 */}
+              <span className={styles.activityDate}>
+                {formatDashedDateToDot(formatDateValue(new Date(item.activityDate)))}
+              </span>
               {/* 평점 또는 독서 상태가 있는 독후감의 도서 정보 이동 영역 */}
               {item.reptGrde || item.reptStatName ? (
                 <Link className={styles.bookInfoLink} to={bookInfoPath}>
                   <span className={styles.ratingStatusRow}>
-                    {/* 독후감 평점 표시 영역 */}
-                    {item.reptGrde ? (
-                      <span className={styles.rating}>
-                        <svg className={styles.ratingIcon} viewBox="0 0 24 24" aria-hidden="true">
-                          <path
-                            d="m12 3.5 2.55 5.17 5.7.83-4.12 4.02.97 5.68L12 16.52 6.9 19.2l.97-5.68L3.75 9.5l5.7-.83L12 3.5Z"
-                            fill="currentColor"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        {item.reptGrde}
-                      </span>
-                    ) : null}
                     {/* 독후감 독서 상태 표시 영역 */}
                     {item.reptStatName ? (
                       <span className={getStatusClassName(item.reptStat)}>{item.reptStatName}</span>
+                    ) : null}
+                    {/* 독후감 평점 표시 영역 */}
+                    {item.reptGrde ? (
+                      <span className={styles.rating}>
+                        <img className={styles.ratingIcon} src="/img/icons/icon-star-rate.svg" alt="" aria-hidden="true" />
+                        {item.reptGrde}
+                      </span>
                     ) : null}
                   </span>
                 </Link>
@@ -1294,12 +1288,14 @@ const FeedPage = () => {
                 <AnimatedReportContent
                   content={reportContent}
                   expanded={isExpanded || !isLongContent}
+                  previewHeight={54}
                 />
               </Link>
             ) : (
               <AnimatedReportContent
                 content={reportContent}
                 expanded={isExpanded || !isLongContent}
+                previewHeight={54}
               />
             )}
             {/* 긴 독후감 본문의 펼침 또는 접기 버튼 영역 */}
@@ -1325,7 +1321,7 @@ const FeedPage = () => {
         <footer className={styles.actions}>
           {isReportFeed && item.trnsAvaiYsno === "Y" ? (
             <button
-              className={reportListStyles.translationButton}
+              className={styles.translationButton}
               type="button"
               disabled={pendingReportNumb === item.reptNumb}
               onClick={toggleCurrentTranslation}
