@@ -167,6 +167,37 @@
            AND MEMBER.MEMB_STAT = #{memberActive}
     </update>
 
+    <!-- 확인한 채팅까지만 읽음 처리하고 원본 번호가 없는 과거 알림은 최신 채팅 확인 시 정리 -->
+    <update id="uptClubChatAlimRead">
+        <include refid="clubCodeBinds" />
+        <bind name="chatTempCode" value="@org.our.sadari.global.common.constant.Constant@ALIM_TEMP_CODE_CLUB_CHAT_MESSAGE" />
+        <bind name="clubTarget" value="@org.our.sadari.global.common.constant.Constant@ALIM_TARGET_READING_CLUB" />
+        UPDATE /* uptClubChatAlimRead */ TB_ALIMXX ALIM
+          JOIN TB_CLMEMX MEMBER
+            ON MEMBER.CLUB_NUMB = #{clubNumb}
+           AND MEMBER.USER_NUMB = ALIM.USER_NUMB
+           AND MEMBER.MEMB_STAT = #{memberActive}
+          JOIN TM_USERXM USERX
+            ON USERX.USER_NUMB = MEMBER.USER_NUMB
+           AND USERX.USER_STAT = #{userActive}
+           SET ALIM.READ_YSNO = #{commYes}
+             , ALIM.READ_DATE = CURRENT_TIMESTAMP
+         WHERE ALIM.USER_NUMB = #{userNumb}
+           AND ALIM.TAGT_TYPE = #{clubTarget}
+           AND ALIM.TAGT_NUMB = #{clubNumb}
+           AND ALIM.TEMP_CODE = #{chatTempCode}
+           AND ALIM.READ_YSNO = #{commNo}
+           AND ALIM.DELT_YSNO = #{commNo}
+           AND (ALIM.CHAT_NUMB <![CDATA[<=]]> MEMBER.READ_NUMB
+                OR (ALIM.CHAT_NUMB IS NULL AND NOT EXISTS (
+                    SELECT 1
+                      FROM TM_CLCHAT NEWCHAT
+                     WHERE NEWCHAT.CLUB_NUMB = MEMBER.CLUB_NUMB
+                       AND NEWCHAT.DELT_YSNO = #{commNo}
+                       AND NEWCHAT.CHAT_NUMB <![CDATA[>]]> MEMBER.READ_NUMB
+                )))
+    </update>
+
     <!-- 발신자를 제외한 활성 계정의 활성 모임원을 채팅 알림 수신 후보로 조회함 -->
     <select id="getClubChatAlimUserList" resultType="long">
         <include refid="clubCodeBinds" />

@@ -24,6 +24,7 @@ import org.our.sadari.report.dto.ReportDto;
  * 2026-08-29        HanWon.Jang        진행 회차 독후감 조회 확장
  * 2026-08-31        HanWon.Jang        독서 회차 조기 마감·결과 확인 추가
  * 2026-09-04        SeungHyeon.Kang    모임 채팅 읽음 수·강제 퇴장 이력 추가
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 @Mapper
 public interface ReadingClubMapper {
@@ -40,6 +41,15 @@ public interface ReadingClubMapper {
     /** 모임원의 마지막 읽은 채팅 번호를 갱신함. @param clubNumb 모임 번호 @param userNumb 사용자 번호 @param chatNumb 마지막 읽은 채팅 번호 @return 수정 수 */
     int uptClubChatRead(@Param("clubNumb") Long clubNumb, @Param("userNumb") Long userNumb
                        , @Param("chatNumb") Long chatNumb);
+
+    /**
+     * 해당 모임의 확인한 채팅까지 알림 읽음 처리
+     * @author HanWon.Jang
+     * @param clubNumb 모임 번호
+     * @param userNumb 인증 사용자 번호
+     * @return 읽음 처리 수
+     */
+    int uptClubChatAlimRead(@Param("clubNumb") Long clubNumb, @Param("userNumb") Long userNumb);
 
     /** 모임 채팅을 중복 없이 저장함. @param clubNumb 모임 번호 @param userNumb 사용자 번호 @param chatType 채팅 유형 @param request 채팅 요청 @return 저장 수 */
     int setClubChat(@Param("clubNumb") Long clubNumb, @Param("userNumb") Long userNumb

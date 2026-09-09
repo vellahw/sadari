@@ -36,6 +36,7 @@ import org.our.sadari.report.dto.ReportDto;
  * 2026-08-26        HanWon.Jang        다음 도서 투표 정책 DTO 추가
  * 2026-09-01        HanWon.Jang        공개 모임 이전 독서 기록 권한 추가
  * 2026-09-04        SeungHyeon.Kang    모임 채팅 읽음 수·강제 퇴장 이력 DTO 추가
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 @Schema(description = "독서 모임 API DTO 컨테이너", hidden = true)
 public final class ReadingClubDto {
@@ -528,10 +529,16 @@ public final class ReadingClubDto {
     @Schema(description = "모임 채팅 읽음 처리 요청")
     public static class ClubChatReadReqDto {
 
-        @NotNull
         @Positive
         @Schema(description = "마지막으로 확인한 채팅 번호")
         private Long chatNumb;
+
+        @Pattern(regexp = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+        @Schema(description = "브라우저 채팅 화면별 UUID")
+        private String viewId;
+
+        @Schema(description = "현재 채팅 화면 표시 여부")
+        private Boolean viewing;
     }
 
     /** 모임 채팅 목록 항목을 전달함 */

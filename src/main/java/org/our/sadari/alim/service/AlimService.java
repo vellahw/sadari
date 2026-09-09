@@ -14,6 +14,7 @@ import org.our.sadari.global.common.result.ResultData;
  * -----------------------------------------------------------
  * 2026-07-24        SeungHyeon.Kang    최초 생성
  * 2026-08-27        SeungHyeon.Kang    동적 알림 대상 조회와 저장 계약 추가
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 public interface AlimService {
     /**
@@ -74,12 +75,12 @@ public interface AlimService {
      * @param tempCode 알림 템플릿 코드
      * @param tagtType 이동 대상 유형
      * @param tagtNumb 이동 대상 번호
-     * @param replyNumb 강조할 댓글 번호
+     * @param messageNumb 알림 원본 댓글 또는 채팅 번호
      * @param replaceMap 템플릿 문구 치환값
      * @return 알림 저장 결과
      */
     ResultData sendAlim(Long userNumb, String alimSitu, String tempCode, String tagtType
-                       , Long tagtNumb, Long replyNumb, Map<String, Object> replaceMap);
+                       , Long tagtNumb, Long messageNumb, Map<String, Object> replaceMap);
 
     /**
      * 발신자와 수신자의 현재 차단 관계를 확인한 뒤 개인 소셜 알림을 발송함
