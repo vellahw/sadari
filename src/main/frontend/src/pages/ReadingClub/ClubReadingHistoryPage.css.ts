@@ -26,7 +26,7 @@ export const historyCard = style({
   appearance: "none",
   display: "flex",
   width: "100%",
-  minHeight: 174,
+  // minHeight: 174,
   gap: 16,
   padding: 20,
   border: `1px solid ${vars.color.gray300}`,

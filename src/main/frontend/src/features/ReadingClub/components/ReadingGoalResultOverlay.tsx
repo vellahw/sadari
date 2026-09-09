@@ -139,29 +139,30 @@ const ReadingGoalResultOverlay = ({
           style={surfaceStyle}
         >
           {/* 종료 독서 회차 제목과 팝업 닫기 영역 */}
-          <header className={styles.header}>
-            <h2 className={styles.title}>{resultTitle}</h2>
-            {variant === "overlay" ? (
-              <button
-                className={styles.closeButton}
-                type="button"
-                aria-label={/* "닫기" */ message("frontend.common.close")}
-                title={/* "닫기" */ message("frontend.common.close")}
-                disabled={closing}
-                onClick={closeReadingGoalResult}
-              >
-                <img
-                  className={styles.closeIcon}
-                  src="/img/icons/icon-close.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-              </button>
-            ) : null}
-          </header>
+          {variant === "overlay" ? (
+            <header className={styles.header}>
+                <button
+                  className={styles.closeButton}
+                  type="button"
+                  aria-label={/* "닫기" */ message("frontend.common.close")}
+                  title={/* "닫기" */ message("frontend.common.close")}
+                  disabled={closing}
+                  onClick={closeReadingGoalResult}
+                >
+                  <img
+                    className={styles.closeIcon}
+                    src="/img/icons/icon-close.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+            </header>
+              ) : null}
 
           {/* 종료 회차 도서와 전체 달성률 영역 */}
           <article className={styles.readingCard}>
+            <h2 className={styles.title}>{resultTitle}</h2>
+
             <div className={styles.bookSummary}>
               <img
                 className={styles.bookCover}

@@ -40,7 +40,7 @@ export const surface = style({
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
-  gap: 30,
+  gap: 20,
   overflowX: "hidden",
   overflowY: "auto",
   scrollbarWidth: "none",
@@ -84,6 +84,8 @@ export const pageSurface = style([
     borderRadius: 0,
     overflow: "visible",
     pointerEvents: "auto",
+    padding: "20px 0",
+
   },
 ]);
 
@@ -114,7 +116,7 @@ export const title = style({
   margin: 0,
   color: vars.color.black,
   fontFamily: vars.font.heading,
-  fontSize: 22,
+  fontSize: 20,
   lineHeight: "44px",
   letterSpacing: "-0.2px",
   textAlign: "center",
@@ -158,7 +160,7 @@ export const readingCard = style({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: 12,
+  gap: 16,
 });
 
 export const bookSummary = style({
