@@ -3,6 +3,17 @@ import type { LikeTargetType } from "@/features/Social/api/socialApi";
 import LikeUserListButton from "./LikeUserListButton";
 import * as styles from "./ReactionButtons.css";
 
+/**
+ * fileName       : ReactionButtons
+ * author         : Hanwon.Jang
+ * date           : 2026-09-10
+ * description    : 좋아요, 댓글 버튼
+ * ===========================================================
+ * DATE              AUTHOR             NOTE
+ * -----------------------------------------------------------
+ * 2026-09-10        Hanwon.Jang    컴포넌트화
+ */
+
 type LikeButtonProps = {
   tagtType: LikeTargetType;
   tagtNumb: number;
@@ -18,6 +29,7 @@ type CommentButtonProps = {
 };
 
 /**
+ *
  * 좋아요 전환 버튼과 좋아요 사용자 목록 버튼 표시
  *
  * @author HanWon.Jang

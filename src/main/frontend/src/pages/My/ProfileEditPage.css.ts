@@ -1372,17 +1372,17 @@ export const goalModalHeader = style({
 export const goalModalHeaderActions = style({
   display: "inline-flex",
   alignItems: "center",
-  gap: "8px",
+  gap: "10px",
 });
 
 export const goalHelpButton = style({
-  minHeight: "30px",
-  padding: "0 10px",
+  minHeight: "28px",
+  padding: "6px 8px",
   border: `1px solid ${vars.color.gray300}`,
   borderRadius: "999px",
   backgroundColor: "#ffffff",
-  color: "#777777",
-  fontFamily: vars.font.semibold,
+  color: vars.color.gray600,
+  fontFamily: vars.font.medium,
   fontSize: "12px",
   lineHeight: 1,
   cursor: "pointer",
@@ -1499,38 +1499,57 @@ export const goalHelpList = style({
 
 export const goalModalBody = style({
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "20px",
+  gap: "34px",
 });
+
+// 목표 설정 내용에 맞춘 팝업 너비와 영역 간격
+export const goalSettingsModal = style({
+  width: "min(467px, 100%)",
+  boxSizing: "border-box",
+  display: "flex",
+  flexDirection: "column",
+  gap: "30px",
+});
+
+// 목표 설정 하단의 동일 너비 명령 영역
+export const goalSettingsActions = style([modalControlStyles.pairedActions, { gap: "10px" }]);
+
+// 목표 설정 팝업의 닫기 명령 표면
+export const goalSettingsClose = style([modalControlStyles.roundClose, { backgroundColor: vars.color.gray200 }]);
 
 export const goalInputLabel = style({
   display: "flex",
-  flexDirection: "column",
-  gap: "7px",
-  fontFamily: vars.font.semibold,
-  fontSize: "14px",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: "12px",
+  fontFamily: vars.font.heading,
+  fontSize: "16px",
   color: vars.color.black,
-  textAlign: "center",
+  textAlign: "left",
+  "@media": {
+    "screen and (max-width: 400px)": { flexWrap: "wrap" },
+  },
 });
 
 export const goalStepper = style({
-  minHeight: "104px",
+  width: "194px",
+  height: "42px",
+  flexShrink: 0,
+  boxSizing: "border-box",
   border: `1px solid ${vars.color.gray300}`,
-  borderRadius: "10px",
+  borderRadius: "8px",
   backgroundColor: "#fff",
   overflow: "hidden",
   display: "grid",
-  gridTemplateRows: "32px 40px 32px",
-  gridTemplateColumns: "1fr",
+  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
   alignItems: "stretch",
   transition: "border-color 160ms ease, background-color 160ms ease",
-  // selectors: {
-  //   "&:focus-within": {
-  //     borderColor: vars.color.black,
-  //     backgroundColor: "#ffffff",
-  //   },
-  // },
+  selectors: {
+    "&:focus-within": { outline: `2px solid ${vars.color.brand}`, outlineOffset: "2px" },
+  },
+  "@media": {
+    "screen and (max-width: 400px)": { width: "100%" },
+  },
 });
 
 export const goalStepperButton = style({
@@ -1548,7 +1567,6 @@ export const goalStepperButton = style({
 });
 
 export const goalStepperDecreaseButton = style({
-  gridRow: "3",
   selectors: {
     "&:hover": {
       backgroundColor: vars.color.gray200,
@@ -1558,7 +1576,6 @@ export const goalStepperDecreaseButton = style({
 });
 
 export const goalStepperIncreaseButton = style({
-  gridRow: "1",
   selectors: {
     "&:hover": {
       backgroundColor: vars.color.gray200,
@@ -1573,40 +1590,39 @@ export const goalInput = style({
   height: "40px",
   padding: "0 4px",
   border: 0,
-  borderTop: `1px solid ${vars.color.gray300}`,
-  borderBottom: `1px solid ${vars.color.gray300}`,
+  borderLeft: `1px solid ${vars.color.gray300}`,
+  borderRight: `1px solid ${vars.color.gray300}`,
   backgroundColor: "transparent",
   color: vars.color.black,
-  fontFamily: vars.font.heading,
-  fontSize: "15px",
+  fontFamily: vars.font.medium,
+  fontSize: "14px",
   textAlign: "center",
   outline: "none",
   selectors: {
     "&::placeholder": {
-      color: "#aaaaaa",
+      color: vars.color.gray600,
     },
   },
 });
 
 export const goalLimitInfo = style({
-  minHeight: "52px",
-  padding: "8px 7px",
-  borderRadius: "9px",
-  backgroundColor: vars.color.gray100,
   display: "flex",
   flexDirection: "column",
-  alignItems: "center",
+  alignItems: "flex-start",
   justifyContent: "center",
-  gap: "5px",
+  gap: "6px",
 });
+
+// 기간명과 목표 수정 가능 상태를 함께 표시하는 영역
+export const goalPeriodHeading = style({ display: "flex", alignItems: "center", gap: "8px", minHeight: "22px" });
 
 export const goalLimitPill = style({
   maxWidth: "100%",
   padding: "4px 8px",
   borderRadius: "999px",
-  backgroundColor: "#edf7f1",
-  color: "#3b8f64",
-  fontFamily: vars.font.semibold,
+  backgroundColor: vars.color.brandBg,
+  color: vars.color.brandText,
+  fontFamily: vars.font.medium,
   fontSize: "12px",
   lineHeight: 1,
   overflow: "hidden",
@@ -1616,8 +1632,8 @@ export const goalLimitPill = style({
 
 export const goalLimitMuted = style({
   maxWidth: "100%",
-  fontFamily: vars.font.body,
-  fontSize: "12px",
+  fontFamily: vars.font.medium,
+  fontSize: "14px",
   lineHeight: 1.25,
   color: vars.color.gray600,
   overflow: "hidden",
@@ -1628,7 +1644,7 @@ export const goalLimitMuted = style({
 export const goalLimitDanger = style([
   goalLimitMuted,
   {
-    color: "#c94b4b",
+    color: vars.color.negativeText,
   },
 ]);
 

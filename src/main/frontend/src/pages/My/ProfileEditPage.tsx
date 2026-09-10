@@ -30,7 +30,7 @@ import {
   type FollowListType,
   type FollowUser,
 } from "@/features/Social/api/socialApi";
-import LikeUserListButton from "@/features/Social/components/LikeUserListButton";
+import { CommentButton, LikeButton } from "@/features/Social/components/ReactionButtons";
 import { useFollowListModal } from "@/features/Social/hooks/useFollowListModal";
 import { isFollowedByMe } from "@/features/Social/utils/followStatus";
 import * as userListStyles from "@/features/Social/components/LikeUserListButton.css";
@@ -213,7 +213,7 @@ const getCopyGoalConfirmText = (summary: MonthlyReadingSummary, periods: Reading
     const period = periods[0];
     const count = getPreviousGoalCount(summary, period);
     const labels = GOAL_COPY_LABELS[period];
-    return `${labels.singular} 독서 목표설정이 비어있습니다. ${labels.previous} 목표 권수(${count}권)를 가져오시겠습니까?`;
+    return `${labels.singular} 독서 목표설정이 비어있습니다.\n${labels.previous} 목표 권수(${count}권)를 가져오시겠습니까?`;
   }
 
   const currentLabels = periods.map((period) => GOAL_COPY_LABELS[period].current);
@@ -539,55 +539,53 @@ const ProfileEditPage = () => {
   };
 
   /**
-   * 다른 사용자의 독후감에서 사용하는 좋아요와 댓글 버튼을 사진 반응용으로 구성함
+   * 공통 좋아요와 댓글 버튼을 현재 사진의 반응 정보에 연결
    *
    * @author SeungHyeon.Kang
    * @param reaction 현재 사진의 좋아요와 댓글 집계
    * @param className 사진 위치에 맞는 반응 버튼 묶음 스타일
    * @return 좋아요와 댓글 버튼 묶음
    */
-  const renderImageReactions = (reaction: ImageReaction, className: string): ReactNode => (
-    <div className={className}>
-      {/* 현재 사진 좋아요 변경과 좋아요 사용자 목록 영역 */}
-      <div className={styles.likeMetricGroup}>
-        <button
-          className={styles.likeIconButton}
-          type="button"
-          aria-label={/* "좋아요" */ message("frontend.feed.likeAction")}
-          aria-pressed={reaction.likeYsno === "Y"}
-          disabled={imageLikeUpdatingType === reaction.tagtType}
-          onClick={() => void handleImageLike(reaction)}
-        >
-          <img
-            className={styles.metricIcon}
-            src={reaction.likeYsno === "Y"
-              ? "/img/icons/icon-heart-fill.svg"
-              : "/img/icons/icon-heart.svg"}
-            alt=""
-          />
-        </button>
-        <LikeUserListButton
-          className={styles.likeCountButton}
+  const renderImageReactions = (reaction: ImageReaction, className: string): ReactNode => {
+    /**
+     * 현재 사진의 좋아요 상태 전환
+     *
+     * @author HanWon.Jang
+     * @return 반환값 없음
+     */
+    const toggleImageLike = (): void => {
+      // 현재 사진을 대상으로 기존 좋아요 처리 실행
+      void handleImageLike(reaction);
+    };
+
+    /**
+     * 현재 사진의 댓글 목록 열기
+     *
+     * @author HanWon.Jang
+     * @return 반환값 없음
+     */
+    const openImageReplies = (): void => {
+      // 댓글 목록의 대상을 현재 사진으로 설정
+      setReplyTarget(reaction);
+    };
+
+    // 사진 위치별 배치에 공통 반응 버튼을 표시하는 영역
+    return (
+      <div className={className}>
+        {/* 현재 사진 좋아요 변경과 좋아요 사용자 목록 영역 */}
+        <LikeButton
           tagtType={reaction.tagtType}
           tagtNumb={reaction.tagtNumb}
+          liked={reaction.likeYsno === "Y"}
           countLabel={reaction.likeCnt}
+          disabled={imageLikeUpdatingType === reaction.tagtType}
+          onClick={toggleImageLike}
         />
+        {/* 현재 사진 댓글 목록 영역 */}
+        <CommentButton count={reaction.replCnt} onClick={openImageReplies} />
       </div>
-      <button
-        className={styles.commentButton}
-        type="button"
-        aria-label={/* "댓글 보기" */ message("frontend.book.publicReports.viewComments")}
-        onClick={() => setReplyTarget(reaction)}
-      >
-        <img
-          className={styles.metricIcon}
-          src="/img/icons/icon-comment.svg"
-          alt=""
-        />
-        {reaction.replCnt}
-      </button>
-    </div>
-  );
+    );
+  };
 
   /**
    * 서버에 남아 있는 임시 이미지 선택본을 화면 미리보기와 저장 식별값에 반영함
@@ -1594,8 +1592,7 @@ const ProfileEditPage = () => {
   };
 
   /**
-   * 목표 입력 카드 하단에 목표 내리기 가능 횟수와 가능 기간 안내를 표시함
-   * 목표 올리기는 항상 가능하므로 내리기 제한 정보를 짧은 보조 정보로 분리해 표시함
+   * 목표 기간명과 내리기 가능 횟수 및 남은 기간 안내
    *
    * @author HanWon.Jang
    * @param period 목표 기간 구분값
@@ -1612,21 +1609,30 @@ const ProfileEditPage = () => {
     return (
       /* 목표 권수 수정 가능 횟수와 제한 기간 안내 영역 */
       <div className={styles.goalLimitInfo}>
-        {isDownClosed ? (
-          <span className={styles.goalLimitDanger}>
-            {/* "내리기 마감" */ message("frontend.profile.goal.downLocked")}
-          </span>
-        ) : (
-          <>
+        {/* 목표 기간명과 수정 가능 상태 영역 */}
+        <div className={styles.goalPeriodHeading}>
+          <label htmlFor={`${period}-goal-count`}>
+            {/* "주간" 또는 "월간" 또는 "연간" */}
+            {message(getGoalPeriodLabelKey(period))}
+          </label>
+          {/* 내리기 마감 전의 첫 설정 또는 남은 횟수 표시 */}
+          {!isDownClosed ? (
             <span className={styles.goalLimitPill}>
               {isUnset
                 ? /* "첫 설정 가능" */ message("frontend.profile.goal.firstSet")
                 : /* "내리기 {0}회" */ message("frontend.profile.goal.remainDown", [remainUpdateCount])}
             </span>
+          ) : null}
+        </div>
+        {/* 목표 내리기 마감 또는 남은 기간 영역 */}
+        {isDownClosed ? (
+          <span className={styles.goalLimitDanger}>
+            {/* "내리기 마감" */ message("frontend.profile.goal.downLocked")}
+          </span>
+        ) : (
             <span className={styles.goalLimitMuted}>
               {/* "내리기 {0}일 남음" */ message("frontend.profile.goal.downRemainDays", [remainDays])}
             </span>
-          </>
         )}
       </div>
     );
@@ -2643,7 +2649,7 @@ const ProfileEditPage = () => {
         >
           {/* 독서 목표 설정 모달 본문 영역 */}
           <section
-            className={`${styles.goalModal} ${
+            className={`${styles.goalModal} ${styles.goalSettingsModal} ${
               closingModal === "goal" ? styles.goalModalClosing : ""
             }`}
             role="dialog"
@@ -2668,12 +2674,12 @@ const ProfileEditPage = () => {
                   {/* "도움말" */ message("frontend.profile.goal.helpButton")}
                 </button>
                 <button
-                  className={modalControlStyles.roundClose}
+                  className={styles.goalSettingsClose}
                   type="button"
                   aria-label={/* "닫기" */ message("frontend.common.close")}
                   onClick={() => void closeProfileModal("goal")}
                 >
-                  <img src={'/img/icons/icon-close.svg'} alt={"close"} width={"12px"}/>
+                  <img src="/img/icons/icon-close.svg" alt="" width="18" height="18" />
                 </button>
               </div>
             </div>
@@ -2681,9 +2687,7 @@ const ProfileEditPage = () => {
             <div className={styles.goalModalBody}>
               {/* 주간 목표 권수 입력과 수정 제한 안내 영역 */}
               <div className={styles.goalInputLabel}>
-                <label htmlFor="week-goal-count">
-                  {/* "주간" */ message("frontend.profile.goal.weekLabel")}
-                </label>
+                {renderGoalLimitInfo("week")}
                 <div className={styles.goalStepper}>
                   <button
                     className={`${styles.goalStepperButton} ${styles.goalStepperDecreaseButton}`}
@@ -2712,13 +2716,10 @@ const ProfileEditPage = () => {
                     +
                   </button>
                 </div>
-                {renderGoalLimitInfo("week")}
               </div>
               {/* 월간 목표 권수 입력과 수정 제한 안내 영역 */}
               <div className={styles.goalInputLabel}>
-                <label htmlFor="month-goal-count">
-                  {/* "월간" */ message("frontend.profile.goal.monthLabel")}
-                </label>
+                {renderGoalLimitInfo("month")}
                 <div className={styles.goalStepper}>
                   <button
                     className={`${styles.goalStepperButton} ${styles.goalStepperDecreaseButton}`}
@@ -2747,13 +2748,10 @@ const ProfileEditPage = () => {
                     +
                   </button>
                 </div>
-                {renderGoalLimitInfo("month")}
               </div>
               {/* 연간 목표 권수 입력과 수정 제한 안내 영역 */}
               <div className={styles.goalInputLabel}>
-                <label htmlFor="year-goal-count">
-                  {/* "연간" */ message("frontend.profile.goal.yearLabel")}
-                </label>
+                {renderGoalLimitInfo("year")}
                 <div className={styles.goalStepper}>
                   <button
                     className={`${styles.goalStepperButton} ${styles.goalStepperDecreaseButton}`}
@@ -2782,11 +2780,10 @@ const ProfileEditPage = () => {
                     +
                   </button>
                 </div>
-                {renderGoalLimitInfo("year")}
               </div>
             </div>
             {/* 독서 목표 설정 취소와 저장 영역 */}
-            <div className={styles.goalModalActions}>
+            <div className={styles.goalSettingsActions}>
               <ActionButton
                 variant="secondary"
                 size="lg"
