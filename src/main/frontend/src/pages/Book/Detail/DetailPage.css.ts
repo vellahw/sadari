@@ -468,74 +468,7 @@ export const recordMetrics = style({
   right: "18px",
   display: "inline-flex",
   alignItems: "center",
-  gap: "4px",
-});
-
-export const likeButton = style({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: "17px",
-  height: "24px",
-  padding: 0,
-  border: 0,
-  backgroundColor: "transparent",
-  color: "#d84a5f",
-  fontFamily: vars.font.semibold,
-  fontSize: "12px",
-  lineHeight: 1,
-  cursor: "pointer",
-  flexShrink: 0,
-
-  selectors: {
-    "&:disabled": {
-      cursor: "default",
-      opacity: 0.55,
-    },
-  },
-});
-
-export const likeIcon = style({
-  width: "17px",
-  height: "17px",
-  flexShrink: 0,
-});
-
-export const likeCount = style({
-  minWidth: "14px",
-  height: "24px",
-  color: "#d84a5f",
-  fontFamily: vars.font.semibold,
-  fontSize: "12px",
-  textAlign: "left",
-});
-
-export const commentIndicator = style({
-  minWidth: "34px",
-  height: "24px",
-  padding: 0,
-  border: 0,
-  background: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "4px",
-  cursor: "pointer",
-  color: "#777777",
-  fontFamily: vars.font.semibold,
-  fontSize: "12px",
-  lineHeight: 1,
-});
-
-export const commentIcon = style({
-  width: "17px",
-  height: "17px",
-  display: "block",
-});
-
-export const commentCount = style({
-  minWidth: "10px",
-  textAlign: "left",
+  gap: "8px",
 });
 
 export const contentBox = style({

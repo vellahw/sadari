@@ -1334,7 +1334,7 @@ const FeedPage = () => {
             </button>
           ) : <span />}
           <div className={styles.reactionActions}>
-            {/* 좋아요 변경과 좋아요 사용자 목록 영역 */}
+            {/* 좋아요 버튼 */}
             <div className={styles.likeActionGroup}>
               <button
                 className={styles.likeIconButton}
@@ -1345,7 +1345,7 @@ const FeedPage = () => {
                 <img
                   className={styles.icon}
                   src={item.likeYsno === "Y" ? "/img/icons/icon-heart-fill.svg" : "/img/icons/icon-heart.svg"}
-                  alt=""
+                  alt="like icon"
                 />
               </button>
               <LikeUserListButton

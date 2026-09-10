@@ -7,13 +7,9 @@ export const countButton = style({
   padding: 0,
   border: 0,
   backgroundColor: "transparent",
-  color: "inherit",
-  fontFamily: "inherit",
-  fontSize: "inherit",
   lineHeight: 1,
   cursor: "pointer",
   selectors: {
-    "&:hover": { textDecoration: "underline" },
     "&:focus-visible": { outline: `2px solid ${vars.color.brand}`, outlineOffset: 2 },
   },
 });

@@ -102,6 +102,7 @@ export const textArea = style({
   padding: 0,
   fontFamily: vars.font.body,
   fontSize: "14px",
+  lineHeight: 1.6,
   color: vars.color.black,
   boxSizing: "border-box",
 });

@@ -3,34 +3,34 @@
  *
  * @author HanWon.Jang
  */
-import { message } from "@/app/messages/message";
-import { getApiErrorMessage } from "@/app/api/resultData";
-import { formatDateValue } from "@/app/utils/dateUtil";
+import {message} from "@/app/messages/message";
+import {getApiErrorMessage} from "@/app/api/resultData";
+import {formatDateValue} from "@/app/utils/dateUtil";
 import {
   sweetConfirm,
   sweetEditGuide,
   sweetWarning,
 } from "@/app/lib/sweetAlert/sweetAlert";
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import type { ChangeEvent, CSSProperties, MouseEvent } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { clsx } from "clsx";
-import { useBookDetail } from "@/features/Book/Detail/hook/useBookDetail";
+import {Link, useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
+import type {ChangeEvent, CSSProperties, MouseEvent} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import {clsx} from "clsx";
+import {useBookDetail} from "@/features/Book/Detail/hook/useBookDetail";
 import {
   BOOK_COVER_FALLBACK_IMAGE,
   getBookCoverImageSource,
   handleBookCoverImageError,
 } from "@/features/Book/utils/bookCoverImage";
-import { usePublicReportLike } from "@/features/Book/Detail/hook/usePublicReports";
-import { useReportAlimSetting } from "@/features/Book/Detail/hook/useReportAlimSetting";
+import {usePublicReportLike} from "@/features/Book/Detail/hook/usePublicReports";
+import {useReportAlimSetting} from "@/features/Book/Detail/hook/useReportAlimSetting";
 import ReportAlimMenu from "@/features/Book/Detail/components/ReportAlimMenu";
-import type { ReportAlimType } from "@/features/Book/api/bookApi";
-import { useUpdateMutation } from "@/features/Book/Update/useUpdateMutation";
-import { useDeleteMutation } from "@/features/Book/Delete/useDeleteMutation";
+import type {ReportAlimType} from "@/features/Book/api/bookApi";
+import {useUpdateMutation} from "@/features/Book/Update/useUpdateMutation";
+import {useDeleteMutation} from "@/features/Book/Delete/useDeleteMutation";
 import Loading from "@/components/Loading/Loading";
-import { FullscreenImageButton } from "@/components/ImageViewer/FullscreenImageViewer";
-import { Container } from "@/components/Layout/Container/Container";
-import { ActionButton } from "@/components/Button/ActionButton";
+import {FullscreenImageButton} from "@/components/ImageViewer/FullscreenImageViewer";
+import {Container} from "@/components/Layout/Container/Container";
+import {ActionButton} from "@/components/Button/ActionButton";
 import ReportStatsEditor from "@/features/Book/Set/components/form/reportStatsEditor/ReportStatsEditor";
 import {
   MAX_REPORT_CONTENT_BYTES,
@@ -47,10 +47,10 @@ import {
   truncateUtf8Bytes,
   validateReportForm,
 } from "@/features/Book/utils/reportValidation";
-import type { ReadingStatusType } from "@/features/Book/types/book.type";
-import { useCodeGroupList } from "@/features/Common/utils/codeUtil";
+import type {ReadingStatusType} from "@/features/Book/types/book.type";
+import {useCodeGroupList} from "@/features/Common/utils/codeUtil";
 import ReplySheet from "@/features/reply/ReplySheet";
-import LikeUserListButton from "@/features/Social/components/LikeUserListButton";
+import { CommentButton, LikeButton } from "@/features/Social/components/ReactionButtons";
 import * as styles from "./DetailPage.css";
 
 const CONTENT_FADE_OUT_MILLISECONDS = 90;
@@ -92,8 +92,8 @@ function getRecordCaretTarget(
 
   // 표준 API가 기록 텍스트 위치를 반환하면 클릭한 문자 오프셋을 사용함
   if (caretPosition
-          && caretPosition.offsetNode.nodeType === Node.TEXT_NODE
-          && recordButton.contains(caretPosition.offsetNode)) {
+    && caretPosition.offsetNode.nodeType === Node.TEXT_NODE
+    && recordButton.contains(caretPosition.offsetNode)) {
     caretOffset = caretPosition.offset;
   }
 
@@ -107,8 +107,8 @@ function getRecordCaretTarget(
 
     // 호환 API가 기록 텍스트 위치를 반환하면 클릭한 문자 오프셋을 사용함
     if (fallbackRange
-            && fallbackRange.startContainer.nodeType === Node.TEXT_NODE
-            && recordButton.contains(fallbackRange.startContainer)) {
+      && fallbackRange.startContainer.nodeType === Node.TEXT_NODE
+      && recordButton.contains(fallbackRange.startContainer)) {
       caretOffset = fallbackRange.startOffset;
     }
 
@@ -136,7 +136,7 @@ function getRecordCaretTarget(
  */
 function DetailPage() {
 
-  const { id } = useParams();
+  const {id} = useParams();
   const idNum = Number(id);
   const location = useLocation();
   const navigate = useNavigate();
@@ -149,12 +149,12 @@ function DetailPage() {
   const focusReplNumb = Number.isSafeInteger(requestedReplyNumb) && requestedReplyNumb > 0
     ? requestedReplyNumb
     : undefined;
-  const { data, error, isError, isPending } = useBookDetail(idNum);
+  const {data, error, isError, isPending} = useBookDetail(idNum);
   const bookData = data?.data;
   const likeMutation = usePublicReportLike();
   const reportAlimMutation = useReportAlimSetting(idNum);
-  const { mutate: updateReport, isPending: isUpdatePending } = useUpdateMutation();
-  const { mutate: deleteReport, isPending: isDeletePending } = useDeleteMutation();
+  const {mutate: updateReport, isPending: isUpdatePending} = useUpdateMutation();
+  const {mutate: deleteReport, isPending: isDeletePending} = useDeleteMutation();
   const [showBookInfo, setShowBookInfo] = useState(false);
   const [isContentFadingOut, setIsContentFadingOut] = useState(false);
   const contentSwitchTimerRef = useRef<number | null>(null);
@@ -185,7 +185,7 @@ function DetailPage() {
   }, [shouldOpenReplies]);
 
   // 상세 직접 편집과 등록 화면이 같은 공통코드 캐시를 사용하도록 상태와 색상 코드를 함께 조회함
-  const { data: codeGroupList = {} } = useCodeGroupList(
+  const {data: codeGroupList = {}} = useCodeGroupList(
     REPORT_FORM_CODE_GROUPS,
   );
   const statusCodes = codeGroupList[REPORT_STATUS_CODE_GROUP] ?? [];
@@ -229,7 +229,7 @@ function DetailPage() {
     // 기존 독후감 수정을 바로 시작할 수 있도록 상세 화면을 편집 상태로 전환함
     setIsEditing(true);
     // 새로고침이나 재조회에서 편집 진입 상태가 반복 적용되지 않도록 이동 상태를 비움
-    navigate(location.pathname, { replace: true, state: null });
+    navigate(location.pathname, {replace: true, state: null});
   }, [bookData, location.pathname, location.state, navigate]);
 
   useEffect(() => {
@@ -265,7 +265,7 @@ function DetailPage() {
       // 입력 중 재렌더링에서 같은 이동이 반복되지 않도록 커서 복원 대상을 제거함
       recordCaretTargetRef.current = null;
       // 커서를 복원하기 전 브라우저 기본 포커스 스크롤을 차단함
-      recordTextArea.focus({ preventScroll: true });
+      recordTextArea.focus({preventScroll: true});
       // 클릭한 문자 위치가 현재 기록 길이를 넘지 않도록 보정함
       const caretOffset = Math.min(recordCaretTarget.caretOffset, content.length);
       // 읽기 상태에서 클릭한 문자와 같은 위치에 편집 커서를 설정함
@@ -275,8 +275,8 @@ function DetailPage() {
       // 클릭한 커서 줄이 화면 상단 여백 아래에 오도록 목표 스크롤 위치를 계산함
       const scrollTop = Math.max(
         window.scrollY + recordTextAreaRect.top
-          + recordCaretTarget.caretTopOffset
-          - RECORD_CARET_VIEWPORT_OFFSET_PIXELS,
+        + recordCaretTarget.caretTopOffset
+        - RECORD_CARET_VIEWPORT_OFFSET_PIXELS,
         0,
       );
       // 클릭한 커서 줄을 향해 화면이 부드럽게 올라가도록 스크롤함
@@ -652,7 +652,7 @@ function DetailPage() {
   };
 
   if (isPending) {
-    return <Loading />;
+    return <Loading/>;
   }
 
   if (isError) {
@@ -737,6 +737,17 @@ function DetailPage() {
   };
 
   /**
+   * 현재 독후감의 댓글 목록 열기
+   *
+   * @author HanWon.Jang
+   * @return 반환값 없음
+   */
+  const openReplySheet = (): void => {
+    // 댓글 목록을 표시하도록 상세 화면 상태 설정
+    setIsReplySheetOpen(true);
+  };
+
+  /**
    * 현재 독후감의 유형별 알림 사용 여부를 변경함
    *
    * @author SeungHyeon.Kang
@@ -749,7 +760,7 @@ function DetailPage() {
     useYsno: "Y" | "N",
   ): void => {
     // 현재 상세 독후감과 사용자가 선택한 유형별 설정을 서버에 반영함
-    reportAlimMutation.mutate({ reptNumb: idNum, alimType, useYsno });
+    reportAlimMutation.mutate({reptNumb: idNum, alimType, useYsno});
   };
 
   // 같은 상세 API에서 받은 도서 정보를 사용해 추가 조회 없이 도서 정보 화면을 구성함
@@ -1008,57 +1019,26 @@ function DetailPage() {
 
                 {/* 편집 모드가 아닐 때만 좋아요 수, 댓글 수 노출 */}
                 {!isRecordEditing ? (
-                    <div className={styles.recordMetrics}>
-                      <button
-                          className={styles.likeButton}
-                          type="button"
-                          aria-label={/* "좋아요" */ message("frontend.common.like")}
-                          aria-pressed={bookData.likeYsno === "Y"}
-                          disabled={likeMutation.isPending}
-                          onClick={handleLikeToggle}
-                      >
-                        <svg
-                            className={styles.likeIcon}
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                          <path
-                              d="M12 20.4S4.5 16.1 3.1 10.6C2.2 7 4.3 4.5 7.1 4.5c1.7 0 3.2.9 4.1 2.2.9-1.3 2.4-2.2 4.1-2.2 2.8 0 4.9 2.5 4 6.1C17.9 16.1 12 20.4 12 20.4Z"
-                              fill={bookData.likeYsno === "Y" ? "currentColor" : "none"}
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                      <LikeUserListButton
-                        className={styles.likeCount}
-                        tagtType="REPORT"
-                        tagtNumb={idNum}
-                        countLabel={getLikeCountLabel(bookData.likeCnt)}
-                      />
-                      <button
-                          className={styles.commentIndicator}
-                          type="button"
-                          aria-label={/* "댓글" */ message("frontend.common.comment")}
-                          onClick={() => setIsReplySheetOpen(true)}
-                      >
-                    <img
-                        className={styles.commentIcon}
-                        src="/img/icons/icon-comment.svg"
-                        alt=""
+                  <div className={styles.recordMetrics}>
+                    {/* 좋아요 전환과 사용자 목록 영역 */}
+                    <LikeButton
+                      tagtType="REPORT"
+                      tagtNumb={idNum}
+                      liked={bookData.likeYsno === "Y"}
+                      countLabel={getLikeCountLabel(bookData.likeCnt)}
+                      disabled={likeMutation.isPending}
+                      onClick={handleLikeToggle}
                     />
-                    <span className={styles.commentCount}>
-                      {bookData.replCnt}
-                    </span>
-                  </button>
-                      <ReportAlimMenu
-                        likeAlimYsno={bookData.likeAlimYsno ?? "Y"}
-                        replyAlimYsno={bookData.replyAlimYsno ?? "Y"}
-                        disabled={reportAlimMutation.isPending}
-                        onChange={handleReportAlimChange}
-                      />
-                    </div>
+                    {/* 댓글 목록 열기 영역 */}
+                    <CommentButton count={bookData.replCnt} onClick={openReplySheet} />
+
+                    <ReportAlimMenu
+                      likeAlimYsno={bookData.likeAlimYsno ?? "Y"}
+                      replyAlimYsno={bookData.replyAlimYsno ?? "Y"}
+                      disabled={reportAlimMutation.isPending}
+                      onChange={handleReportAlimChange}
+                    />
+                  </div>
                 ) : null}
               </div>
 
@@ -1142,7 +1122,7 @@ function DetailPage() {
       </Container>
       {isReplySheetOpen ? (
         <ReplySheet
-          report={{ reptNumb: idNum }}
+          report={{reptNumb: idNum}}
           focusReplNumb={focusReplNumb}
           onClose={() => setIsReplySheetOpen(false)}
         />

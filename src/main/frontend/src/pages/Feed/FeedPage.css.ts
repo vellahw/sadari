@@ -147,7 +147,7 @@ export const reportMediaRow = style({
   alignItems: "center",
   gap: "10px",
   width: "100%",
-  padding: "0 16px 16px",
+  padding: "8px 16px 26px",
   boxSizing: "border-box",
 });
 
@@ -350,18 +350,35 @@ export const likeActionGroup = style({
   alignItems: "center",
   justifyContent: "center",
   gap: "4px",
-  color: "#ff747c",
+  color: "#FF8386",
   fontFamily: vars.font.body,
   fontSize: "14px",
 });
 
-export const likeIconButton = style([actionButton, {minWidth: "16px", width: "16px"}]);
+export const likeIconButton = style([
+  actionButton,
+  {
+    minWidth: "16px",
+    width: "16px"
+  }
+]);
 
-export const likeCountButton = style({color: "#ff747c"});
+export const likeCountButton = style({
+  color: "#d84a5f",
+  fontFamily: vars.font.body
+});
 
-export const commentButton = style([actionButton, {color: "#777777"}]);
+export const commentButton = style([
+  actionButton,
+  {
+    color: "#777777"
+  }]);
 
-export const icon = style({width: "16px", height: "16px", flexShrink: 0});
+export const icon = style({
+  width: "16px",
+  height: "16px",
+  flexShrink: 0
+});
 
 export const empty = style({
   margin: "72px 20px",
