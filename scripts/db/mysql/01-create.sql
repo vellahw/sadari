@@ -214,6 +214,7 @@ CREATE TABLE `TB_ALIMXX` (
   `TAGT_TYPE` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '알림 이동 대상 유형',
   `TAGT_NUMB` bigint DEFAULT NULL COMMENT '알림 이동 대상 번호',
   `REPL_NUMB` bigint DEFAULT NULL COMMENT '알림 강조 댓글 번호',
+  `CHAT_NUMB` bigint DEFAULT NULL COMMENT '알림 원본 채팅 번호',
   `READ_YSNO` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '읽기 권한 또는 읽음 여부',
   `READ_DATE` datetime DEFAULT NULL COMMENT '읽음 처리 일시',
   `SEND_DATE` datetime DEFAULT NULL COMMENT '알림 발송 일시',

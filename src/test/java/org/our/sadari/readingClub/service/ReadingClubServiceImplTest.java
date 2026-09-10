@@ -93,6 +93,9 @@ class ReadingClubServiceImplTest {
     // 공통코드 조회 도구
     @Mock
     private CodeUtil codeUtil;
+    // 채팅 화면 열람 여부 조회 서비스
+    @Mock
+    private ClubChatViewService clubChatViewService;
 
     // 독서 모임 서비스 단위 테스트 대상
     private ReadingClubServiceImpl readingClubService;
@@ -117,7 +120,7 @@ class ReadingClubServiceImplTest {
         readingClubService = new ReadingClubServiceImpl(
                 readingClubMapper, readingClubMembershipMapper, badWordDetectionService
               , alimService, bookMapper, reportMapper
-              , userBlockService, codeUtil);
+              , userBlockService, codeUtil, clubChatViewService);
     }
 
     /**
@@ -1399,7 +1402,7 @@ class ReadingClubServiceImplTest {
         when(readingClubMapper.getClubChatAlimUserList(10L, 20L)).thenReturn(List.of(30L));
         when(alimService.sendAlim(
                 30L, Constant.ALIM_SITU_REPLY, Constant.ALIM_TEMP_CODE_CLUB_CHAT_MESSAGE
-              , Constant.ALIM_TARGET_READING_CLUB, 10L, null
+              , Constant.ALIM_TARGET_READING_CLUB, 10L, 1L
               , Map.of("clubName", "함께 읽는 모임", "userName", "독서가"
                      , "chatContent", "이번 주 책 어땠나요?")
         )).thenReturn(ResultData.success());
@@ -1410,10 +1413,80 @@ class ReadingClubServiceImplTest {
         assertEquals(savedChat, result.getData());
         verify(alimService).sendAlim(
                 30L, Constant.ALIM_SITU_REPLY, Constant.ALIM_TEMP_CODE_CLUB_CHAT_MESSAGE
-              , Constant.ALIM_TARGET_READING_CLUB, 10L, null
+              , Constant.ALIM_TARGET_READING_CLUB, 10L, 1L
               , Map.of("clubName", "함께 읽는 모임", "userName", "독서가"
                      , "chatContent", "이번 주 책 어땠나요?")
         );
+    }
+
+    /** 열람 중인 수신자 제외 및 다른 수신자 알림 유지 검증 @author HanWon.Jang */
+    @Test
+    void setChatSkipsViewers() {
+        // 활성 모임에서 한 회원만 현재 채팅 화면을 열람하는 상황 구성
+        ReadingClubDto.ClubChatReqDto request = new ReadingClubDto.ClubChatReqDto();
+        request.setChatCntn("함께 읽어요");
+        request.setClntUuid("6e6e0ec8-dfd8-4ba2-8278-f26e6fd6a008");
+        ReadingClubDto.ClubViewDto club = new ReadingClubDto.ClubViewDto();
+        club.setClubStat("ACTIVE");
+        club.setClubName("테스트 모임");
+        ReadingClubDto.ClubChatDto chat = new ReadingClubDto.ClubChatDto();
+        chat.setChatNumb(42L);
+        chat.setChatCntn(request.getChatCntn());
+        chat.setUserNick("테스트 작성자");
+        when(badWordDetectionService.findBadWord(request.getChatCntn())).thenReturn(Optional.empty());
+        when(readingClubMapper.getClubForUpdate(10L)).thenReturn(club);
+        when(readingClubMapper.getActiveMemberCnt(10L, 20L)).thenReturn(1);
+        when(readingClubMapper.setClubChat(10L, 20L, "TEXT", request)).thenReturn(1);
+        when(readingClubMapper.getClubChatByUuid(10L, 20L, request.getClntUuid())).thenReturn(chat);
+        when(readingClubMapper.getClubChatAlimUserList(10L, 20L)).thenReturn(List.of(30L, 40L));
+        when(clubChatViewService.isViewing(10L, 30L)).thenReturn(true);
+        when(alimService.sendAlim(org.mockito.ArgumentMatchers.eq(40L), any(), any(), any(), any(), any(), any()))
+                .thenReturn(ResultData.success());
+
+        // 열람 중인 회원에게 저장·푸시 요청 없이 다른 회원에게만 원본 번호 전달 검증
+        assertEquals(200, readingClubService.setClubChat(20L, 10L, request).getCode());
+        verify(alimService, never()).sendAlim(org.mockito.ArgumentMatchers.eq(30L), any(), any(), any(), any(), any(), any());
+        verify(alimService).sendAlim(40L, Constant.ALIM_SITU_REPLY, Constant.ALIM_TEMP_CODE_CLUB_CHAT_MESSAGE,
+                Constant.ALIM_TARGET_READING_CLUB, 10L, 42L,
+                Map.of("clubName", "테스트 모임", "userName", "테스트 작성자", "chatContent", "함께 읽어요"));
+    }
+
+    /** 빈 채팅방의 열람 등록과 화면 종료 시 읽음 위치 보존 검증 @author HanWon.Jang */
+    @Test
+    void uptEmptyChatView() {
+        // 원본 메시지 없이 열람 신호만 전달하는 활성 모임원 구성
+        ReadingClubDto.ClubViewDto club = new ReadingClubDto.ClubViewDto();
+        club.setClubStat("ACTIVE");
+        when(readingClubMapper.getClubForUpdate(10L)).thenReturn(club);
+        when(readingClubMapper.getActiveMemberCnt(10L, 20L)).thenReturn(1);
+        when(alimService.getUnreadAlimCnt(20L)).thenReturn(ResultData.success(Map.of("unreadCnt", 2)));
+        ReadingClubDto.ClubChatReadReqDto request = new ReadingClubDto.ClubChatReadReqDto();
+        request.setViewId("6e6e0ec8-dfd8-4ba2-8278-f26e6fd6a008");
+        request.setViewing(true);
+
+        // 화면 등록 뒤 종료 신호는 읽음 위치 변경 없이 해당 화면만 해제
+        assertEquals(200, readingClubService.uptClubChatRead(20L, 10L, request).getCode());
+        request.setViewing(false);
+        assertEquals(200, readingClubService.uptClubChatRead(20L, 10L, request).getCode());
+        verify(clubChatViewService).uptChatView(10L, 20L, request.getViewId(), true);
+        verify(clubChatViewService).uptChatView(10L, 20L, request.getViewId(), false);
+        verify(readingClubMapper, never()).uptClubChatRead(any(), any(), any());
+        verify(readingClubMapper, never()).uptClubChatAlimRead(any(), any());
+    }
+
+    /** 식별값 없는 열람 신호와 비어 있는 요청 거부 검증 @author HanWon.Jang */
+    @Test
+    void uptViewRejectsInvalid() {
+        // 잘못된 요청은 잠금이나 열람 저장소에 접근하기 전에 거부
+        ReadingClubDto.ClubChatReadReqDto request = new ReadingClubDto.ClubChatReadReqDto();
+        assertEquals(ResultEnum.COMMON_INVALID_REQUEST.getCode(),
+                readingClubService.uptClubChatRead(20L, 10L, request).getCode());
+        request.setViewing(true);
+        assertEquals(ResultEnum.COMMON_INVALID_REQUEST.getCode(),
+                readingClubService.uptClubChatRead(20L, 10L, request).getCode());
+        assertEquals(ResultEnum.COMMON_INVALID_REQUEST.getCode(),
+                readingClubService.uptClubChatRead(20L, 10L, null).getCode());
+        org.mockito.Mockito.verifyNoInteractions(readingClubMapper, clubChatViewService, alimService);
     }
 
     /** 비활성 계정 또는 비회원은 모임 채팅 목록을 볼 수 없는지 검증함. */
@@ -1435,6 +1508,10 @@ class ReadingClubServiceImplTest {
     @Test
     void uptChatReadUpdatesCursor() {
         // 실제 채팅 번호를 담은 읽음 처리 요청을 구성함
+        // 채팅 저장과 같은 모임 잠금 및 활성 상태 구성
+        ReadingClubDto.ClubViewDto club = new ReadingClubDto.ClubViewDto();
+        club.setClubStat("ACTIVE");
+        when(readingClubMapper.getClubForUpdate(10L)).thenReturn(club);
         ReadingClubDto.ClubChatReadReqDto request = new ReadingClubDto.ClubChatReadReqDto();
         // 마지막으로 화면에 표시한 채팅 번호를 설정함
         request.setChatNumb(15L);
@@ -1443,6 +1520,8 @@ class ReadingClubServiceImplTest {
         // 요청한 채팅이 같은 모임에 있어 읽음 위치가 갱신되도록 구성함
         when(readingClubMapper.uptClubChatRead(10L, 20L, 15L)).thenReturn(1);
 
+        when(alimService.getUnreadAlimCnt(20L)).thenReturn(ResultData.success(Map.of("unreadCnt", 2)));
+
         // 활성 모임원의 채팅 읽음 처리를 실행함
         ResultData result = readingClubService.uptClubChatRead(20L, 10L, request);
 
@@ -1450,11 +1529,21 @@ class ReadingClubServiceImplTest {
         assertEquals(200, result.getCode());
         // 요청한 모임과 사용자 및 채팅 번호로 읽음 위치를 갱신했는지 검증함
         verify(readingClubMapper).uptClubChatRead(10L, 20L, 15L);
+        // 읽음 위치 갱신 뒤 알림을 정리하고 최신 배지 응답 반환 검증
+        InOrder order = org.mockito.Mockito.inOrder(readingClubMapper, alimService);
+        order.verify(readingClubMapper).uptClubChatRead(10L, 20L, 15L);
+        order.verify(readingClubMapper).uptClubChatAlimRead(10L, 20L);
+        order.verify(alimService).getUnreadAlimCnt(20L);
+        assertEquals(Map.of("unreadCnt", 2), result.getData());
     }
 
     /** 같은 모임에 없는 채팅 번호는 읽음 위치로 저장하지 않는지 검증함. */
     @Test
     void uptReadRejectsUnknownChat() {
+        // 채팅 저장과 같은 모임 잠금 및 활성 상태 구성
+        ReadingClubDto.ClubViewDto club = new ReadingClubDto.ClubViewDto();
+        club.setClubStat("ACTIVE");
+        when(readingClubMapper.getClubForUpdate(10L)).thenReturn(club);
         ReadingClubDto.ClubChatReadReqDto request = new ReadingClubDto.ClubChatReadReqDto();
         request.setChatNumb(15L);
         when(readingClubMapper.getActiveMemberCnt(10L, 20L)).thenReturn(1);
@@ -1463,6 +1552,9 @@ class ReadingClubServiceImplTest {
         ResultData result = readingClubService.uptClubChatRead(20L, 10L, request);
 
         assertEquals(ResultEnum.COMMON_INVALID_REQUEST.getCode(), result.getCode());
+        // 권한 또는 원본 검증 실패 시 알림과 열람 상태 미변경 검증
+        verify(readingClubMapper, never()).uptClubChatAlimRead(10L, 20L);
+        org.mockito.Mockito.verifyNoInteractions(clubChatViewService);
     }
 
     /**
@@ -1473,6 +1565,10 @@ class ReadingClubServiceImplTest {
     @Test
     void uptReadRejectsInactive() {
         // 접근이 거절될 채팅 읽음 처리 요청을 구성함
+        // 채팅 저장과 같은 모임 잠금 및 활성 상태 구성
+        ReadingClubDto.ClubViewDto club = new ReadingClubDto.ClubViewDto();
+        club.setClubStat("ACTIVE");
+        when(readingClubMapper.getClubForUpdate(10L)).thenReturn(club);
         ReadingClubDto.ClubChatReadReqDto request = new ReadingClubDto.ClubChatReadReqDto();
         // 유효한 채팅 번호를 설정해 회원 권한만 검증하도록 구성함
         request.setChatNumb(15L);
@@ -1486,6 +1582,9 @@ class ReadingClubServiceImplTest {
         assertEquals(ResultEnum.COMMON_ACCESS_REJECTED.getCode(), result.getCode());
         // 권한이 없는 회원의 읽음 위치를 갱신하지 않았는지 검증함
         verify(readingClubMapper, never()).uptClubChatRead(10L, 20L, 15L);
+        // 권한 또는 원본 검증 실패 시 알림과 열람 상태 미변경 검증
+        verify(readingClubMapper, never()).uptClubChatAlimRead(10L, 20L);
+        org.mockito.Mockito.verifyNoInteractions(clubChatViewService);
     }
 
     /**

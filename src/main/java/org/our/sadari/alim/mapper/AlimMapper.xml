@@ -62,6 +62,7 @@
                   , TAGT_TYPE
                   , TAGT_NUMB
                   , REPL_NUMB
+                  , CHAT_NUMB
                   , READ_YSNO
                   , SEND_DATE
                   , DELT_YSNO
@@ -75,6 +76,7 @@
              , #{tagtType,jdbcType=VARCHAR}
              , #{tagtNumb,jdbcType=BIGINT}
              , #{replNumb,jdbcType=BIGINT}
+             , #{chatNumb,jdbcType=BIGINT}
              , #{readYsno}
              , CURRENT_TIMESTAMP
              , #{deltYsno}

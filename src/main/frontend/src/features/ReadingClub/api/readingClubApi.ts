@@ -419,16 +419,24 @@ export const getClubChatListApi = async (
  * @author SeungHyeon.Kang
  * @param clubNumb 모임 번호
  * @param chatNumb 마지막으로 확인한 채팅 번호
- * @return 반환값 없음
+ * @param viewId 브라우저 채팅 화면별 식별값
+ * @param viewing 현재 화면 표시 여부
+ * @return 남은 안 읽은 알림 수
  */
-export const uptClubChatReadApi = async (clubNumb: number, chatNumb: number): Promise<void> => {
+export const uptClubChatReadApi = async (
+  clubNumb: number,
+  chatNumb?: number,
+  viewId?: string,
+  viewing?: boolean,
+): Promise<number> => {
   const requestConfig: SadariRequestConfig = {skipBlockingOperation: true};
   const response = await api.patch(
     `/reading-clubs/${clubNumb}/chats/read`,
-    {chatNumb},
+    {chatNumb, viewId, viewing},
     requestConfig,
   );
-  assertResultDataSuccess(response.data);
+  const data = assertResultDataSuccess(response.data).data as {unreadCnt: number};
+  return data.unreadCnt;
 };
 
 /**

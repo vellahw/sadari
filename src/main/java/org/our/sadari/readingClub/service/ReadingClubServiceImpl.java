@@ -52,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2026-09-01        HanWon.Jang        공개 모임 조회·자진 탈퇴 처리
  * 2026-09-03        HanWon.Jang        사용자 차단 관계의 신규 참여 제한 추가
  * 2026-09-04        SeungHyeon.Kang    모임 채팅 읽음 수·강제 퇴장 이력 처리 추가
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 @Service
 @RequiredArgsConstructor
@@ -107,6 +108,8 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     private final UserBlockService userBlockService;
     // 독후감 기본 책갈피 색상 공통코드 조회 도구
     private final CodeUtil codeUtil;
+    // 활성 채팅 화면에 대한 알림 생략 판단 서비스
+    private final ClubChatViewService clubChatViewService;
 
     /** {@inheritDoc} */
     @Override
@@ -678,25 +681,39 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     public ResultData uptClubChatRead(Long userNumb, Long clubNumb
                                     , ReadingClubDto.ClubChatReadReqDto request) {
         // 읽음 상태를 변경할 모임과 채팅 식별값을 검증함
-        if (StringUtil.hasEmpty(userNumb, clubNumb, request, request.getChatNumb())
-                || request.getChatNumb() <= 0) {
+        if (StringUtil.hasEmpty(userNumb, clubNumb, request)
+                || (!StringUtil.isEmpty(request.getChatNumb()) && request.getChatNumb() <= 0)
+                || (StringUtil.isEmpty(request.getChatNumb()) && StringUtil.isEmpty(request.getViewing()))
+                || (!StringUtil.isEmpty(request.getViewing()) && StringUtil.isEmpty(request.getViewId()))) {
             // "요청값이 올바르지 않아요."
             return ResultData.fail(ResultEnum.COMMON_INVALID_REQUEST);
         }
 
-        // 현재 활성 모임원만 본인의 채팅 읽음 위치를 변경할 수 있음
-        if (readingClubMapper.getActiveMemberCnt(clubNumb, userNumb) == 0) {
+        // 채팅 생성과 읽음 처리를 직렬화하여 늦게 저장된 알림의 읽음 누락 방지
+        ReadingClubDto.ClubViewDto club = readingClubMapper.getClubForUpdate(clubNumb);
+        if (StringUtil.isEmpty(club) || !CLUB_ACTIVE.equals(club.getClubStat())
+                || readingClubMapper.getActiveMemberCnt(clubNumb, userNumb) == 0) {
             // "올바르지 않은 접근이에요. 다시 시도해주세요."
             return ResultData.fail(ResultEnum.COMMON_ACCESS_REJECTED);
         }
 
-        // 같은 모임에 실제로 존재하는 채팅 번호까지만 읽음 위치를 앞으로 이동함
-        if (readingClubMapper.uptClubChatRead(clubNumb, userNumb, request.getChatNumb()) == 0) {
-            // "요청값이 올바르지 않아요."
-            return ResultData.fail(ResultEnum.COMMON_INVALID_REQUEST);
+        // 빈 채팅방의 열람 신호와 실제 채팅 읽음 위치 갱신 분리
+        if (!StringUtil.isEmpty(request.getChatNumb())) {
+            // 같은 모임에 존재하는 채팅까지만 읽음 위치 이동
+            if (readingClubMapper.uptClubChatRead(clubNumb, userNumb, request.getChatNumb()) == 0) {
+                // "요청값이 올바르지 않아요."
+                return ResultData.fail(ResultEnum.COMMON_INVALID_REQUEST);
+            }
+            // 확인한 위치까지의 해당 모임 채팅 알림만 함께 읽음 처리
+            readingClubMapper.uptClubChatAlimRead(clubNumb, userNumb);
         }
-        // 채팅 읽음 상태 갱신 완료 응답을 반환함
-        return ResultData.success();
+        // 알림 배지에 즉시 반영할 현재 안 읽은 알림 수 조회
+        ResultData result = alimService.getUnreadAlimCnt(userNumb);
+        // 권한과 읽음 위치 검증을 통과한 화면의 열람 상태만 갱신
+        if (!StringUtil.isEmpty(request.getViewing())) {
+            clubChatViewService.uptChatView(clubNumb, userNumb, request.getViewId(), request.getViewing());
+        }
+        return result;
     }
 
     /** {@inheritDoc} @author SeungHyeon.Kang */
@@ -745,13 +762,17 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         if (insertCnt > 0) {
             String preview = StringUtil.cutString(chat.getChatCntn(), "…", CHAT_ALIM_PREVIEW_SIZE);
             for (Long receiverNumb : readingClubMapper.getClubChatAlimUserList(clubNumb, userNumb)) {
+                // 현재 해당 채팅방을 보고 있는 모임원의 알림센터 저장과 푸시 생략
+                if (clubChatViewService.isViewing(clubNumb, receiverNumb)) {
+                    continue;
+                }
                 ResultData alimResult = alimService.sendAlim(
                         receiverNumb
                       , Constant.ALIM_SITU_REPLY
                       , Constant.ALIM_TEMP_CODE_CLUB_CHAT_MESSAGE
                       , Constant.ALIM_TARGET_READING_CLUB
                       , clubNumb
-                      , null
+                      , chat.getChatNumb()
                       , Map.of("clubName", club.getClubName()
                              , "userName", chat.getUserNick()
                              , "chatContent", preview)

@@ -20,6 +20,7 @@ import lombok.Data;
  * 2026-08-12        SeungHyeon.Kang    알림 아이콘 조인 응답 필드 추가
  * 2026-08-14        SeungHyeon.Kang    알림 목록 10개 단위 조회 설명 반영
  * 2026-08-27        SeungHyeon.Kang    동적 알림 이동 대상 필드와 응답 DTO 추가
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 @Schema(description = "알림 API 요청과 응답 DTO 컨테이너", hidden = true)
 public class AlimDto {
@@ -101,6 +102,10 @@ public class AlimDto {
         @Schema(description = "알림에서 강조할 댓글 번호", example = "8", hidden = true)
         @JsonIgnore
         private Long replNumb;
+
+        @Schema(description = "알림 원본 채팅 번호", hidden = true)
+        @JsonIgnore
+        private Long chatNumb;
 
         @Schema(description = "읽음 여부", example = "N", allowableValues = {"Y", "N"})
         private String readYsno;

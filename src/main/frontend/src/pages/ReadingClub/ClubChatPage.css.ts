@@ -15,10 +15,6 @@ export const page = style({
   overflow: "hidden",
 });
 
-export const header = style({display: "flex", flexDirection: "column", gap: 4, marginBottom: 20});
-export const title = style({margin: 0, color: vars.color.black, fontFamily: vars.font.heading, fontSize: 20});
-export const description = style({margin: 0, color: vars.color.gray600, fontFamily: vars.font.body, fontSize: 14});
-
 export const currentBookCard = style({
   display: "grid",
   gridTemplateColumns: "30px minmax(0, 1fr) 18px",

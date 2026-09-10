@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * 2026-08-20        SeungHyeon.Kang    타이머 알림 중복 제외
  * 2026-08-25        SeungHyeon.Kang    사진 댓글 알림 중복 제외
  * 2026-08-27        SeungHyeon.Kang    권한 기반 알림과 사진 프로필 이동 계산
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 @Service
 @RequiredArgsConstructor
@@ -265,14 +266,14 @@ public class AlimServiceImpl implements AlimService {
      * @param tempCode 알림 템플릿 코드
      * @param tagtType 이동 대상 유형
      * @param tagtNumb 이동 대상 번호
-     * @param replyNumb 알림에서 강조할 댓글 번호
+     * @param messageNumb 알림 원본 댓글 또는 채팅 번호
      * @param replaceMap 화면 문구 치환값
      * @return 알림 저장 결과
      */
     @Override
     @Transactional
     public ResultData sendAlim(Long userNumb, String alimSitu, String tempCode, String tagtType
-                             , Long tagtNumb, Long replyNumb, Map<String, Object> replaceMap) {
+                             , Long tagtNumb, Long messageNumb, Map<String, Object> replaceMap) {
         // 수신자와 템플릿 및 지원 대상 정보가 없으면 이동할 수 없는 알림이 저장되므로 요청을 거부함
         if (StringUtil.hasEmpty(userNumb, alimSitu, tempCode, tagtType)
                 || !isAlimTargetValid(tempCode, tagtType, tagtNumb)) {
@@ -330,8 +331,12 @@ public class AlimServiceImpl implements AlimService {
         alim.setTagtType(tagtType);
         // 최종 이동 화면을 찾을 이동 대상 번호를 설정함
         alim.setTagtNumb(tagtNumb);
-        // 댓글 목록에서 강조할 댓글 번호를 설정함
-        alim.setReplNumb(replyNumb);
+        // 채팅 읽음 범위와 댓글 강조 대상을 원본 유형에 따라 분리
+        if (Constant.ALIM_TEMP_CODE_CLUB_CHAT_MESSAGE.equals(tempCode)) {
+            alim.setChatNumb(messageNumb);
+        } else {
+            alim.setReplNumb(messageNumb);
+        }
         // ReadYsno 업무 값을 alim DTO에 설정함
         alim.setReadYsno(Constant.COMM_NO);
         // DeltYsno 업무 값을 alim DTO에 설정함

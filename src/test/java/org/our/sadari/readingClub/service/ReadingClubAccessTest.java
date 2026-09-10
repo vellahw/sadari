@@ -40,6 +40,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * -----------------------------------------------------------
  * 2026-08-24        SeungHyeon.Kang    최초 생성
  * 2026-09-01        HanWon.Jang        자진 탈퇴 Mapper 의존성 반영
+ * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
  */
 @ExtendWith(MockitoExtension.class)
 class ReadingClubAccessTest {
@@ -68,6 +69,9 @@ class ReadingClubAccessTest {
     // 공통코드 조회 도구
     @Mock
     private CodeUtil codeUtil;
+    // 채팅 화면 열람 여부 조회 서비스
+    @Mock
+    private ClubChatViewService clubChatViewService;
     // 독서 모임 접근 정책 테스트 대상
     private ReadingClubServiceImpl readingClubService;
 
@@ -87,7 +91,7 @@ class ReadingClubAccessTest {
         readingClubService = new ReadingClubServiceImpl(
                 readingClubMapper, readingClubMembershipMapper, badWordDetectionService
               , alimService, bookMapper, reportMapper
-              , userBlockService, codeUtil);
+              , userBlockService, codeUtil, clubChatViewService);
     }
 
     /** 초대 관계가 활성 회원 조회에서 제외되면 비공개 상세 접근을 거절함 */

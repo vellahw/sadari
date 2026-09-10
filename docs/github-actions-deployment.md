@@ -233,3 +233,9 @@ Actions Variables에는 다음 값을 등록합니다.
 `C:/shared/sadari-uploads`는 Windows 절대경로이므로 macOS에서는 같은 위치로 사용할 수 없습니다. Mac mini 디스크를 직접 사용할 때는 두 앱 모두 `STORAGE_PROVIDER=local`, `STORAGE_LOCAL_ROOT=/Users/Shared/sadari-uploads`처럼 macOS 절대경로를 지정합니다. Mac mini의 S3 호환 저장소로 전환할 때는 `STORAGE_S3_ENDPOINT`와 `STORAGE_S3_PATH_STYLE_ACCESS`를 해당 제품 설정에 맞게 변경합니다.
 
 기존 로컬 영구 이미지 파일은 자동 이전하지 않습니다. 운영 컨테이너의 `sadari-uploads` Named Volume 연결은 제거했으며, 배포 전환 전에 기존 파일 보존이 필요한 경우 별도 마이그레이션을 수행해야 합니다. 프로필 편집 중 생성되는 30분 임시 이미지는 공개 경로와 분리된 컨테이너 임시 디렉터리에 계속 저장하며 재배포 시 소실될 수 있습니다.
+
+### 채팅 열람 상태와 알림 읽음 처리
+
+채팅 열람 유효 시간은 로컬과 운영 설정의 `reading-club.chat-view-ttl-seconds`에서 초 단위로 관리하며 기본값은 15입니다. 화면은 3초마다 열람 상태를 갱신하므로 유효 시간은 갱신 주기보다 충분히 길게 유지합니다. Redis를 공유하는 서버들은 동일한 시각 기준과 설정을 사용해야 합니다. Redis 장애 시 알림 생략을 중단하고 일반 수신 조건으로 발송합니다.
+
+배포 전 [초기 테이블 정의](../scripts/db/mysql/01-create.sql)의 알림 원본 채팅 번호 필드를 기존 데이터베이스에 먼저 반영합니다. 기존 알림은 원본 연결이 비어 있어도 조회할 수 있고, 해당 채팅방의 최신 메시지까지 읽으면 함께 읽음 처리합니다. 앱을 이전 버전으로 되돌려도 추가 필드는 유지할 수 있습니다.

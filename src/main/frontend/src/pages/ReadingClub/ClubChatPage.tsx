@@ -258,18 +258,7 @@ const ClubChatPage = () => {
           </span>
           <span className={styles.currentBookArrow} aria-hidden="true">›</span>
         </Link>
-      ) : (
-        <header className={styles.header}>
-          <h1 className={styles.title}>
-            {/* "{모임명} 채팅" */}
-            {message("frontend.readingClub.chat.title", [club.clubName])}
-          </h1>
-          <p className={styles.description}>
-            {/* "모임원들과 독서 이야기를 나눠보세요." */}
-            {message("frontend.readingClub.chat.description")}
-          </p>
-        </header>
-      )}
+      ) : null}
 
       {/* 모임 채팅 메시지 목록 영역 */}
       <section
