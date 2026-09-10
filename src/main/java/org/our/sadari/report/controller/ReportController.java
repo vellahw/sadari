@@ -34,12 +34,12 @@ import org.springframework.web.bind.annotation.RestController;
  * DATE              AUTHOR             NOTE
  * -----------------------------------------------------------
  * 2026-07-17        SeungHyeon.Kang    최초 생성
- * 2026-08-01        SeungHyeon.Kang,SeungHyeon.Kang    최근 독후감·공개 API 추가
+ * 2026-08-01        SeungHyeon.Kang, HanWon.Jang   최근 독후감·공개 API 추가
  * 2026-08-11        SeungHyeon.Kang    다중 탭 독후감 수정 충돌 409 응답 추가
  * 2026-08-14        SeungHyeon.Kang    공개 독후감 팔로우 작성자 우선 조회 API 반영
  * 2026-08-15        SeungHyeon.Kang    공개 독후감 조회·정렬 API
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 API 추가
- * 2026-09-07        HanWon.Jang        공개 독후감 번역 API 추가
+ * 2026-09-07        SeungHyeon.Kang        공개 독후감 번역 API 추가
  */
 @Slf4j
 @RestController
@@ -145,7 +145,7 @@ public class ReportController {
     /**
      * 공개 독후감을 현재 사용자 표시 언어로 번역하고 결과를 재사용 캐시에 저장함
      *
-     * @author HanWon.Jang
+     * @author SeungHyeon.Kang
      * @param userNumb Spring Security에서 주입한 로그인 사용자 번호
      * @param reptNumb 번역할 공개 독후감 번호
      * @return 번역문과 캐시 사용 여부

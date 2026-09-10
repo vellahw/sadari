@@ -76,7 +76,13 @@ public class ReadingClubController {
         return readingClubService.delBookRecommendation(userNumb, clubNumb, recmNumb);
     }
 
-    /** 다음 도서에 투표함. @author HanWon.Jang @param userNumb 사용자 번호 @param clubNumb 모임 번호 @param request 투표 대상 @return 투표 결과 */
+    /** 다음 도서 투표
+     *  @author HanWon.Jang
+     *  @param userNumb 사용자 번호
+     *  @param clubNumb 모임 번호
+     *  @param request 투표 대상
+     *  @return 투표 결과
+     *  */
     @PutMapping("/{clubNumb}/book-vote")
     @Operation(summary = "다음 도서 투표")
     public ResultData uptBookVote(@Parameter(hidden = true) @AuthenticationPrincipal Long userNumb
@@ -105,7 +111,7 @@ public class ReadingClubController {
     }
 
     /**
-     * 현재 모임 독서의 도서와 목표 기간을 수정함
+     * 현재 모임 독서의 도서와 목표 기간을 수정
      *
      * @author Hanwon.Jang
      * @param userNumb 수정을 요청한 모임장 사용자 번호
@@ -231,7 +237,10 @@ public class ReadingClubController {
         return readingClubService.getClubChatList(userNumb, clubNumb, afterChatNumb);
     }
 
-    /** 활성 모임원의 마지막 읽은 채팅 번호를 갱신함. @author SeungHyeon.Kang */
+    /**
+     * 활성 모임원의 마지막 읽은 채팅 번호를 갱신함.
+     * @author SeungHyeon.Kang
+     * */
     @PatchMapping("/{clubNumb}/chats/read")
     @Operation(summary = "모임 채팅 읽음 처리")
     public ResultData uptClubChatRead(@Parameter(hidden = true) @AuthenticationPrincipal Long userNumb
@@ -241,7 +250,10 @@ public class ReadingClubController {
         return readingClubService.uptClubChatRead(userNumb, clubNumb, request);
     }
 
-    /** 활성 모임원이 채팅을 전송함. @author SeungHyeon.Kang */
+    /**
+     * 활성 모임원이 채팅을 전송함.
+     * @author SeungHyeon.Kang
+     */
     @PostMapping("/{clubNumb}/chats")
     @Operation(summary = "모임 채팅 전송")
     public ResultData setClubChat(@Parameter(hidden = true) @AuthenticationPrincipal Long userNumb
@@ -270,7 +282,7 @@ public class ReadingClubController {
     }
 
     /**
-     * 활성 모임원에게 종료된 최신 독서 회차의 목표 결과를 제공함
+     * 종료된 최신 독서 회차의 목표 결과 조회
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -286,7 +298,7 @@ public class ReadingClubController {
     }
 
     /**
-     * 현재 활성 모임원에게 지정한 완료 독서 회차의 목표 결과를 제공함
+     * 이전 독서 기록 페이지의 상세페이지 (독서 회차 목표 결과)
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -321,7 +333,7 @@ public class ReadingClubController {
     }
 
     /**
-     * 활성 모임원과 공개 중인 활성 모임 조회자에게 모든 이전 독서 기록을 제공함
+     * 이전 독서 기록 리스트 조회
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호

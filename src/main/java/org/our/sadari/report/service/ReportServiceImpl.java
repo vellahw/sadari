@@ -47,12 +47,12 @@ import org.springframework.transaction.annotation.Transactional;
  * -----------------------------------------------------------
  * 2026-07-17        SeungHyeon.Kang    최초 생성
  * 2026-07-30        SeungHyeon.Kang    독후감 별점 0.5점 단위 검증 추가
- * 2026-08-01        SeungHyeon.Kang,SeungHyeon.Kang    최근 독후감·공개 정책 추가
- * 2026-08-04        SeungHyeon.Kang       독서 요약 공개 범위 조건 추가
+ * 2026-08-01        SeungHyeon.Kang    최근 독후감·공개 정책 추가
+ * 2026-08-04        SeungHyeon.Kang    독서 요약 공개 범위 조건 추가
  * 2026-08-14        SeungHyeon.Kang    공개 독후감 팔로우 작성자 우선 조회 반영
  * 2026-08-15        SeungHyeon.Kang    공개 독후감 조회·정렬 추가
  * 2026-08-21        SeungHyeon.Kang    독후감별 좋아요·댓글 알림 설정 추가
- * 2026-09-07        HanWon.Jang        독후감 작성 언어와 공개 번역 가능 여부 반영
+ * 2026-09-07        SeungHyeon.Kang    독후감 작성 언어와 공개 번역 가능 여부 반영
  */
 @Service
 @RequiredArgsConstructor
@@ -1629,7 +1629,7 @@ public class ReportServiceImpl implements ReportService {
     /**
      * 사용자 설정의 표시 언어를 독후감 원문 언어 코드로 변환함
      *
-     * @author HanWon.Jang
+     * @author SeungHyeon.Kang
      * @param reportDto 원문 언어를 설정할 독후감 DTO
      * @param setting 현재 사용자 설정
      */

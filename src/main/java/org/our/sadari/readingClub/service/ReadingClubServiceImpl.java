@@ -26,6 +26,7 @@ import org.our.sadari.readingClub.mapper.ReadingClubMembershipMapper;
 import org.our.sadari.report.dto.ReportDto;
 import org.our.sadari.report.mapper.ReportMapper;
 import org.our.sadari.social.service.UserBlockService;
+import org.our.sadari.user.dto.UserSettingDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -111,7 +112,14 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     // 활성 채팅 화면에 대한 알림 생략 판단 서비스
     private final ClubChatViewService clubChatViewService;
 
-    /** {@inheritDoc} */
+    /**
+     * 다음 도서 추천 목록 조회
+     *
+     * @author HanWon.Jang
+     * @param userNumb 유저 번호
+     * @param clubNumb 모임 번호
+     * @return
+     */
     @Override
     public ResultData getBookRecommendationList(Long userNumb, Long clubNumb) {
         // 필수 식별값과 활성 모임원 권한을 함께 검증함
@@ -142,7 +150,14 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         return ResultData.success(pageDto);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * 다음 도서 투표 후보 등록
+     * @author HanWon.Jang
+     * @param userNumb
+     * @param clubNumb
+     * @param request
+     * @return
+     */
     @Override
     @Transactional
     public ResultData setBookRecommendation(Long userNumb, Long clubNumb
@@ -172,7 +187,9 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         // 도서 마스터는 ISBN 기준으로 재사용하고 없을 때만 생성함
         // 언어 코드가 없는 이전 화면 요청은 기존 한국어 도서 정보로 보정함
         setDefaultBookLanguage(request);
+
         Long bookNumb = bookMapper.getBookNumbByIsbn(request);
+
         if (StringUtil.isEmpty(bookNumb)) {
             bookMapper.setBook(request);
             bookNumb = request.getBookNumb();
@@ -184,7 +201,15 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         return ResultData.success(request.getRecmNumb());
     }
 
-    /** {@inheritDoc} */
+    /**
+     * 도서 투표 추천 후보 삭제
+     *
+     * @author HanWon.Jang
+     * @param userNumb
+     * @param clubNumb
+     * @param recmNumb
+     * @return
+     */
     @Override
     @Transactional
     public ResultData delBookRecommendation(Long userNumb, Long clubNumb, Long recmNumb) {
@@ -214,7 +239,15 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         return ResultData.success();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * 다음 도서 투표
+     *
+     * @author HanWon.Jang
+     * @param userNumb
+     * @param clubNumb
+     * @param request
+     * @return
+     */
     @Override
     @Transactional
     public ResultData uptBookVote(Long userNumb, Long clubNumb, ReadingClubDto.BookVoteReqDto request) {
@@ -288,7 +321,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 모임 독서 회차와 활성 멤버별 읽는 중 독후감을 하나의 요청으로 등록
      *
      * @author Hanwon.Jang
      * @param userNumb 등록을 요청한 모임장 사용자 번호
@@ -308,6 +341,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
 
         // 같은 모임의 회차 번호 계산과 동시 등록을 직렬화하기 위해 모임 행을 잠금
         ReadingClubDto.ClubViewDto club = readingClubMapper.getClubForUpdate(clubNumb);
+
         // 활성 계정인 현재 모임장만 독서를 등록할 수 있음
         if (StringUtil.isEmpty(club) || !CLUB_ACTIVE.equals(club.getClubStat())
                 || readingClubMapper.getActiveOwnerCnt(clubNumb, userNumb) == 0) {
@@ -330,6 +364,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
 
         // 계정과 멤버 관계가 모두 활성인 사용자만 이번 회차에 자동 참여시킴
         List<Long> memberUserNumbList = readingClubMapper.getActiveMemberUserNumbList(clubNumb);
+
         // 모임장이 포함된 활성 멤버 목록이 없으면 불완전한 회차를 만들지 않음
         if (StringUtil.isEmpty(memberUserNumbList) || memberUserNumbList.isEmpty()
                 || !memberUserNumbList.contains(userNumb)) {
@@ -346,6 +381,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
 
         // 언어 코드가 없는 이전 화면 요청은 기존 한국어 도서 정보로 보정함
         setDefaultBookLanguage(request);
+
         // ISBN과 언어 기준으로 등록된 도서가 없을 때만 도서 마스터를 생성함
         if (bookMapper.dupBook(request) == 0) {
             // 신규 도서 마스터를 저장함
@@ -398,7 +434,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 현재 모임 독서의 도서와 목표 기간을 수정
      *
      * @author Hanwon.Jang
      * @param userNumb 수정을 요청한 모임장 사용자 번호
@@ -479,7 +515,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 모임 회차 조기 마감
      *
      * @author HanWon.Jang
      * @param userNumb 마감을 요청한 모임장 사용자 번호
@@ -532,7 +568,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 내 참여 모임 리스트 조회
      *
      * @author SeungHyeon.Kang
      * @param userNumb 로그인 사용자 번호
@@ -555,7 +591,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 모임 찾기 목록의 리스트 조회
      *
      * @author SeungHyeon.Kang
      * @param userNumb 로그인 사용자 번호
@@ -581,7 +617,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 로그인 사용자의 참여 관계를 포함한 독서 모임 상세 정보를 조회함
      *
      * @author SeungHyeon.Kang
      * @param userNumb 로그인 사용자 번호
@@ -625,7 +661,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 모임 참여 멤버 리스트 조회
      *
      * @author SeungHyeon.Kang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -654,7 +690,15 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         return ResultData.success(members);
     }
 
-    /** {@inheritDoc} @author SeungHyeon.Kang */
+    /**
+     * 모임 채팅 목록 조회
+     *
+     * @author SeungHyeon.Kang
+     * @param userNumb
+     * @param clubNumb
+     * @param afterChatNumb
+     * @return
+     */
     @Override
     public ResultData getClubChatList(Long userNumb, Long clubNumb, Long afterChatNumb) {
         // 채팅 식별값과 마지막 채팅 번호 범위를 검증함
@@ -675,7 +719,15 @@ public class ReadingClubServiceImpl implements ReadingClubService {
                 clubNumb, userNumb, afterChatNumb, CHAT_LIST_SIZE));
     }
 
-    /** {@inheritDoc} @author SeungHyeon.Kang */
+    /**
+     * 활성 모임원의 마지막 읽은 채팅 번호를 갱신함.
+     *
+     * @author SeungHyeon.Kang
+     * @param userNumb
+     * @param clubNumb
+     * @param request
+     * @return
+     */
     @Override
     @Transactional
     public ResultData uptClubChatRead(Long userNumb, Long clubNumb
@@ -716,7 +768,15 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         return result;
     }
 
-    /** {@inheritDoc} @author SeungHyeon.Kang */
+    /**
+     * 활성 모임원이 채팅을 전송함.
+     *
+     * @author SeungHyeon.Kang
+     * @param userNumb
+     * @param clubNumb
+     * @param request
+     * @return
+     */
     @Override
     @Transactional
     public ResultData setClubChat(Long userNumb, Long clubNumb, ReadingClubDto.ClubChatReqDto request) {
@@ -790,7 +850,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 종료된 최신 독서 회차의 목표 결과 조회
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -804,7 +864,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 이전 독서 기록 페이지의 상세페이지 (독서 회차 목표 결과)
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -825,7 +885,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 독서 회차 결과 팝업 닫기 확인 처리
      *
      * @author HanWon.Jang
      * @param userNumb 확인한 사용자 번호
@@ -855,7 +915,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * 활성 모임원에게 최신 또는 지정 완료 회차의 목표 결과를 제공함
+     * 활성 모임원에게 최신 또는 지정 완료 회차의 목표 결과를 제공
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -895,7 +955,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     }
 
     /**
-     * {@inheritDoc}
+     * 이전 독서 기록 리스트 조회
      *
      * @author HanWon.Jang
      * @param userNumb 조회를 요청한 사용자 번호
@@ -2282,7 +2342,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
     /**
      * 이전 화면 요청의 도서 정보 언어를 한국어로 보정함
      *
-     * @author HanWon.Jang
+     * @author SeungHyeon.Kang
      * @param bookDto 도서 정보 언어를 확인할 요청 DTO
      */
     private void setDefaultBookLanguage(BookDto bookDto) {
