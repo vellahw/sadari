@@ -788,7 +788,15 @@ class ReadingClubServiceImplTest {
 
         // 삭제 성공과 모임 마스터 삭제 호출을 검증함
         assertEquals(200, result.getCode());
-        verify(readingClubMapper).delClub(20L, 10L);
+        // 외래키 자식과 결선 투표를 부모보다 먼저 삭제하는 순서 검증
+        InOrder deletionOrder = org.mockito.Mockito.inOrder(readingClubMapper);
+        deletionOrder.verify(readingClubMapper).getClubForUpdate(10L);
+        deletionOrder.verify(readingClubMapper).delClubBallots(10L);
+        deletionOrder.verify(readingClubMapper).delClubVotes(10L, 2);
+        deletionOrder.verify(readingClubMapper).delClubVotes(10L, 1);
+        deletionOrder.verify(readingClubMapper).delClubElections(10L);
+        deletionOrder.verify(readingClubMapper).delClubSelections(10L);
+        deletionOrder.verify(readingClubMapper).delClub(20L, 10L);
     }
 
     /**
@@ -809,11 +817,9 @@ class ReadingClubServiceImplTest {
         when(readingClubMapper.getClubForUpdate(10L)).thenReturn(club);
         when(readingClubMapper.delClub(20L, 10L)).thenReturn(0);
 
-        // 계정 제한 상태를 SQL 가드로 모사해 모임 삭제를 요청함
-        ResultData result = readingClubService.delClub(20L, 10L);
-
-        // 물리 삭제가 거절되는지 검증함
-        assertEquals(ResultEnum.COMMON_DELETE_REJECTED.getCode(), result.getCode());
+        // 마지막 삭제 거절 시 트랜잭션 롤백을 유발하는 업무 예외 검증
+        CustomException exception = assertThrows(CustomException.class, () -> readingClubService.delClub(20L, 10L));
+        assertEquals(ResultEnum.COMMON_DELETE_REJECTED, exception.getResultEnum());
     }
 
     /**

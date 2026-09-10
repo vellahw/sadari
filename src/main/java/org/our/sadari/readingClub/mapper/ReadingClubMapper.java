@@ -290,6 +290,39 @@ public interface ReadingClubMapper {
     int delClub(@Param("userNumb") Long userNumb, @Param("clubNumb") Long clubNumb);
 
     /**
+     * 모임 삭제 전 선택지를 참조하는 투표용지 정리
+     * @author HanWon.Jang
+     * @param clubNumb 삭제할 모임 번호
+     * @return 삭제된 투표용지 수
+     */
+    int delClubBallots(@Param("clubNumb") Long clubNumb);
+
+    /**
+     * 모임 삭제 전 결선부터 차수별 투표 정리
+     * @author HanWon.Jang
+     * @param clubNumb 삭제할 모임 번호
+     * @param voteRoun 삭제할 투표 차수
+     * @return 삭제된 투표 수
+     */
+    int delClubVotes(@Param("clubNumb") Long clubNumb, @Param("voteRoun") int voteRoun);
+
+    /**
+     * 모임 삭제 전 도서 선정을 참조하는 선거 정리
+     * @author HanWon.Jang
+     * @param clubNumb 삭제할 모임 번호
+     * @return 삭제된 선거 수
+     */
+    int delClubElections(@Param("clubNumb") Long clubNumb);
+
+    /**
+     * 모임 삭제 전 회차를 참조하는 도서 선정 정리
+     * @author HanWon.Jang
+     * @param clubNumb 삭제할 모임 번호
+     * @return 삭제된 도서 선정 수
+     */
+    int delClubSelections(@Param("clubNumb") Long clubNumb);
+
+    /**
      * 모임 카테고리 한 건을 등록함
      *
      * @author SeungHyeon.Kang

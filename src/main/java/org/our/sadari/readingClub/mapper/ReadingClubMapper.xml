@@ -755,6 +755,35 @@
            )
     </update>
 
+    <!-- 선택지의 외래키 삭제 제한을 해소하기 위한 투표용지 선행 삭제 -->
+    <delete id="delClubBallots">
+        DELETE /* delClubBallots */
+          FROM TB_CLVBAL
+         WHERE CLUB_NUMB = #{clubNumb}
+    </delete>
+
+    <!-- 본선 자기 참조를 해소하도록 결선부터 차수별 투표 삭제 -->
+    <delete id="delClubVotes">
+        DELETE /* delClubVotes */
+          FROM TM_CLVOTX
+         WHERE CLUB_NUMB = #{clubNumb}
+           AND VOTE_ROUN = #{voteRoun}
+    </delete>
+
+    <!-- 도서 선정 참조를 해소하기 위한 모임장 선거 삭제 -->
+    <delete id="delClubElections">
+        DELETE /* delClubElections */
+          FROM TM_CLOWNX
+         WHERE CLUB_NUMB = #{clubNumb}
+    </delete>
+
+    <!-- 회차 참조를 해소하기 위한 도서 선정 삭제 -->
+    <delete id="delClubSelections">
+        DELETE /* delClubSelections */
+          FROM TM_CLSELT
+         WHERE CLUB_NUMB = #{clubNumb}
+    </delete>
+
     <!-- 현재 모임장이 소유한 운영 중 모임과 외래키 종속 데이터를 물리 삭제함 -->
     <delete id="delClub">
         <include refid="clubCodeBinds" />

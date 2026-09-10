@@ -1326,10 +1326,21 @@ public class ReadingClubServiceImpl implements ReadingClubService {
             return ResultData.fail(ResultEnum.COMMON_ACCESS_REJECTED);
         }
 
-        // 소유권과 운영 상태를 SQL에서도 다시 확인하며 모임 종속 데이터는 외래키로 함께 삭제함
+        // 선택지 삭제를 막는 투표용지를 먼저 정리
+        readingClubMapper.delClubBallots(clubNumb);
+        // 본선 투표를 참조하는 결선 투표부터 정리
+        readingClubMapper.delClubVotes(clubNumb, 2);
+        // 결선 참조가 제거된 본선 투표와 선택지 및 유권자 정리
+        readingClubMapper.delClubVotes(clubNumb, 1);
+        // 도서 선정을 참조하는 모임장 선거 정리
+        readingClubMapper.delClubElections(clubNumb);
+        // 회차를 참조하는 도서 선정 정리
+        readingClubMapper.delClubSelections(clubNumb);
+
+        // 소유권과 활성 계정을 다시 검증하며 나머지 종속 데이터와 모임 삭제
         if (readingClubMapper.delClub(userNumb, clubNumb) == 0) {
-            // "삭제에 실패했어요. 다시 시도해주세요."
-            return ResultData.fail(ResultEnum.COMMON_DELETE_REJECTED);
+            // 마지막 삭제가 거절되면 앞선 종속 데이터 삭제도 롤백
+            throw new CustomException(ResultEnum.COMMON_DELETE_REJECTED, HttpStatus.BAD_REQUEST);
         }
 
         // 개인 독후감과 공용 도서를 제외한 모임 및 종속 데이터 삭제 성공을 반환함
