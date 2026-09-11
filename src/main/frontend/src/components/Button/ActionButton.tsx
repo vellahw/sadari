@@ -21,13 +21,6 @@ type ActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   iconPosition?: "left" | "right";
 };
 
-/**
- * 화면 명령의 중요도와 크기 및 선택적 아이콘 위치를 버튼에 적용함
- *
- * @author Hanwon.Jang
- * @param props 버튼 변형과 크기 및 기본 버튼 속성
- * @return 공통 화면 명령 버튼
- */
 export function ActionButton({
   variant = "primary",
   size = "md",
