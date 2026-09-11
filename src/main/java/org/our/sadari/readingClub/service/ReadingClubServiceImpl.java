@@ -2284,6 +2284,7 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         ReportDto report = new ReportDto();
         report.setUserNumb(userNumb);
         report.setBookNumb(request.getBookNumb());
+        report.setLangCode(request.getLangCode());
         report.setReptStat(Constant.REPORT_STAT_READ);
         report.setReptStdt(request.getGoalStdt());
         report.setReptEndt(request.getGoalEndt());

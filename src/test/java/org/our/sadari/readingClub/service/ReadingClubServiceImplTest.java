@@ -166,6 +166,7 @@ class ReadingClubServiceImplTest {
         verify(reportMapper, times(2)).setReport(reportCaptor.capture());
         assertEquals(List.of(20L, 30L), reportCaptor.getAllValues().stream().map(ReportDto::getUserNumb).toList());
         assertEquals(List.of("READ", "READ"), reportCaptor.getAllValues().stream().map(ReportDto::getReptStat).toList());
+        assertEquals(List.of("ko", "ko"), reportCaptor.getAllValues().stream().map(ReportDto::getLangCode).toList());
         assertEquals(List.of("2026-08-14", "2026-08-14"), reportCaptor.getAllValues().stream().map(ReportDto::getReptStdt).toList());
         assertEquals(List.of("2026-08-31", "2026-08-31"), reportCaptor.getAllValues().stream().map(ReportDto::getReptEndt).toList());
         verify(readingClubMapper).setReadingParticipant(10L, 1L, 1L, 20L, 120L);
