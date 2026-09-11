@@ -95,8 +95,23 @@
 
 ## 프로필 고정 설정
 
-- `application-loc.yml`은 `localhost:3306/sadari` MySQL 8.4를 사용하며 비밀번호는
-  `DB_PASSWORD` 환경변수로만 전달합니다.
+- 사용자·관리자 앱의 `application-loc.yml`은 RDS MySQL 8.4에 연결합니다. 기존 DB 설정은
+  주석으로 보존하고 `spring.datasource.url`, `username`, `password`에 실제 접속값을 직접 입력합니다.
+  이는 사용자가 요청한 로컬 전용 설정이며 두 YML은 Git에서 제외합니다. 실제 비밀번호는 공개
+  예시와 배포 문서에 기록하지 않습니다. 로컬 앱은 `rds.env`를 자동으로 읽지 않습니다.
+- `rds.env.example`은 환경변수 기반 연결을 선택할 때의 참고 예시입니다. 운영 프로필은 기존
+  `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` 환경변수 방식을 유지합니다.
+- RDS 연결은 `sslMode=VERIFY_IDENTITY`를 사용합니다. AWS 공식
+  [CA 인증서 묶음](https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem)의 해당 리전
+  루트 인증서를 Java PKCS12 신뢰 저장소에 등록하고 JDBC URL의 `trustCertificateKeyStoreUrl`에
+  절대 파일 URL을 지정합니다. 예시의 `changeit`은 공개 CA 인증서만 담은 저장소의 무결성 확인값이며
+  DB 비밀번호와 다릅니다. 신뢰 저장소는 로컬 `.gradle/rds` 아래에 보관할 수 있습니다.
+- 1GiB RDS를 여러 로컬 앱에서 공유할 때 `loc`의 `spring.datasource.hikari`에는
+  `maximum-pool-size: 5`, `minimum-idle: 1`, `connection-timeout: 60000`밀리초를 직접 설정합니다. 운영의 기본값 `10`, `2`,
+  `60000`은 유지하며, 로컬 파일과 인증서 경로는 GitHub Actions나 Docker에 전달하지 않습니다.
+- 전환 후 두 앱을 재시작하고 DB 조회와 Tailnet 화면을 확인합니다. 연결이 실패하면 인증서 경로,
+  비밀번호, RDS 상태와 보안 그룹을 확인하며 인증서 검증을 끄지 않습니다. 기존 DB로 복귀하려면
+  앱을 중지한 뒤 해당 환경의 접속 정보를 별도 비공개 설정으로 지정하고 다시 시작합니다.
 - Tailnet 장치에서 로컬 OAuth를 검증할 때는 `application-loc.yml`의 `domain.front`와
   `domain.back` 기본값을 같은 `https://<tailscale-device>.<tailnet>.ts.net` 주소로 설정하고
   `app.cookie.secure=true`, `app.cookie.same-site=Lax`를 사용합니다.
