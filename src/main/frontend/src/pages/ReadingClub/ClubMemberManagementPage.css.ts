@@ -266,6 +266,7 @@ export const inviteModal = style([
     gap: 20,
     padding: 20,
     border: 0,
+    margin: "0 16px"
   },
 ]);
 
