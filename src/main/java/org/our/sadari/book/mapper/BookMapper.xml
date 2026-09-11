@@ -85,7 +85,7 @@
                   , #{bookPubl}
                   , #{bookCvim}
                   , #{bookDesc}
-                  , #{publDate}
+                  , STR_TO_DATE(NULLIF(REPLACE(#{publDate}, '-', ''), ''), '%Y%m%d')
         )
     </insert>
 </mapper>

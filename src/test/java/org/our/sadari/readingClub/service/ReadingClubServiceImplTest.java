@@ -1,6 +1,7 @@
 package org.our.sadari.readingClub.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doAnswer;
@@ -10,9 +11,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +64,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * 2026-08-31        HanWon.Jang        독서 조기 마감·결과 확인 검증
  * 2026-09-01        HanWon.Jang        공개 모임 조회·자진 탈퇴 검증
  * 2026-09-04        SeungHyeon.Kang    가입 차단·채팅 읽음 수·퇴장 이력 검증
+ * 2026-09-11        HanWon.Jang        도서 언어·알림 기본값 등록 검증
  */
 @ExtendWith(MockitoExtension.class)
 class ReadingClubServiceImplTest {
@@ -167,10 +174,34 @@ class ReadingClubServiceImplTest {
         assertEquals(List.of(20L, 30L), reportCaptor.getAllValues().stream().map(ReportDto::getUserNumb).toList());
         assertEquals(List.of("READ", "READ"), reportCaptor.getAllValues().stream().map(ReportDto::getReptStat).toList());
         assertEquals(List.of("ko", "ko"), reportCaptor.getAllValues().stream().map(ReportDto::getLangCode).toList());
+        assertEquals(List.of("Y", "Y"), reportCaptor.getAllValues().stream().map(ReportDto::getLikeAlimYsno).toList());
+        assertEquals(List.of("Y", "Y"), reportCaptor.getAllValues().stream().map(ReportDto::getReplyAlimYsno).toList());
         assertEquals(List.of("2026-08-14", "2026-08-14"), reportCaptor.getAllValues().stream().map(ReportDto::getReptStdt).toList());
         assertEquals(List.of("2026-08-31", "2026-08-31"), reportCaptor.getAllValues().stream().map(ReportDto::getReptEndt).toList());
         verify(readingClubMapper).setReadingParticipant(10L, 1L, 1L, 20L, 120L);
         verify(readingClubMapper).setReadingParticipant(10L, 1L, 2L, 30L, 130L);
+    }
+
+    /**
+     * 빈 도서 언어 코드가 서비스 기본값 보정 전에 Controller 검증에서 거절되지 않는지 검증함
+     *
+     * @author HanWon.Jang
+     */
+    @Test
+    void blankLangUsesDefault() {
+
+        ReadingClubDto.ReadingCreateReqDto request = createReadingRequest();
+        request.setLangCode("");
+
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = validatorFactory.getValidator();
+            Set<ConstraintViolation<ReadingClubDto.ReadingCreateReqDto>> violations = validator.validate(request);
+            boolean hasLanguageViolation = violations.stream()
+                    .map(violation -> violation.getPropertyPath().toString())
+                    .anyMatch("langCode"::equals);
+
+            assertFalse(hasLanguageViolation);
+        }
     }
 
     /**

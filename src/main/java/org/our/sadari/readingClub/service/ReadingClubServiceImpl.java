@@ -54,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2026-09-03        HanWon.Jang        사용자 차단 관계의 신규 참여 제한 추가
  * 2026-09-04        SeungHyeon.Kang    모임 채팅 읽음 수·강제 퇴장 이력 처리 추가
  * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
+ * 2026-09-11        HanWon.Jang        모임 독서 등록 기본값 처리
  */
 @Service
 @RequiredArgsConstructor
@@ -2291,6 +2292,8 @@ public class ReadingClubServiceImpl implements ReadingClubService {
         report.setReptGrde("0");
         report.setReptColr(reportColor);
         report.setPubcYsno(Constant.COMM_NO);
+        report.setLikeAlimYsno(Constant.COMM_YES);
+        report.setReplyAlimYsno(Constant.COMM_YES);
         report.setReptCntn("");
         // 동일한 목표 기간의 읽는 중 독후감을 반환함
         return report;
