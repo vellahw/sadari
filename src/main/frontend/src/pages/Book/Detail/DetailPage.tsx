@@ -617,13 +617,15 @@ function DetailPage() {
    * @return 반환값이 없음
    * @throws API 요청 또는 비동기 처리 실패 시 발생
    */
-  async function handleDelete() {
+  const handleDelete = async () => {
 
-    // "삭제하시겠습니까"
+    // 현재 모임 독서 여부에 맞는 삭제 영향 안내
     const confirmed = await sweetConfirm({
       icon: "warning",
       title: message("frontend.alert.deleteConfirmTitle"),
-      text: message("frontend.report.deleteConfirmText"),
+      text: message(bookData?.clubReadingReport === true
+        ? "frontend.report.clubDropoutDeleteConfirmText"
+        : "frontend.report.deleteConfirmText"),
       // "삭제하기"
       confirmButtonText: message("frontend.common.delete"),
       cancelButtonText: message("frontend.common.cancel"),
@@ -636,7 +638,7 @@ function DetailPage() {
 
     // 확인된 독후감 번호로 삭제 요청을 전송함
     deleteReport(idNum);
-  }
+  };
 
   /**
    * get Like Count Label 정보를 조회함

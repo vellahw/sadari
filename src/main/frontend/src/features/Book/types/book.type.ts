@@ -9,6 +9,7 @@
  * 2026-04-02       HanWon.Jang       최초 생성
  * 2026-08-16       SeungHyeon.Kang   도서 인기 검색어 응답 타입 추가
  * 2026-09-08       HanWon.Jang       언어별 외부 도서 검색 결과 타입 반영
+ * 2026-09-11       HanWon.Jang       진행 중인 모임 회차 연결 여부 추가
  */
 
 /**
@@ -107,6 +108,8 @@ export interface ReportDtoType {
   reptStdt: string;
   // 진행 중인 모임 독서에 연결되어 독서 시작일을 수정할 수 없는지 여부
   reptStdtLocked?: boolean;
+  // 진행 중인 모임 회차에서 자동 생성된 독후감인지 여부
+  clubReadingReport?: boolean;
   // 독서 종료일
   reptEndt: string;
   // 별점

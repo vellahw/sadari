@@ -24,6 +24,7 @@ import org.our.sadari.social.dto.SocialDto;
  * 2026-08-14        SeungHyeon.Kang    독후감 관계 정리·정렬 추가
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 조회·변경 추가
  * 2026-09-07        SeungHyeon.Kang    독후감 번역 캐시 조회·저장 추가
+ * 2026-09-11        HanWon.Jang        진행 중인 모임 독후감 삭제 시 중도하차 처리 추가
  */
 @Mapper
 public interface ReportMapper {
@@ -192,6 +193,15 @@ public interface ReportMapper {
      * @return 반영 건수
      */
     int uptReptStatusGrade(ReportDto reportDto);
+
+    /**
+     * 진행 중인 모임 회차의 연결 독후감 삭제 전 참여 기록을 중도하차로 확정함
+     *
+     * @author HanWon.Jang
+     * @param reportDto 사용자 번호와 독후감 번호
+     * @return 반영 건수
+     */
+    int uptClubReadingDropout(ReportDto reportDto);
 
     /**
      * 독후감에 연결된 댓글과 답글의 좋아요를 삭제함

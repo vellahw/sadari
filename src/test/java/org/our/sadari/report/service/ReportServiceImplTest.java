@@ -48,6 +48,7 @@ import org.our.sadari.user.mapper.UserMapper;
  * 2026-08-15        SeungHyeon.Kang    공개 독후감 정렬 코드 검증 추가
  * 2026-08-20        SeungHyeon.Kang    책장 색상 기본값 검증 추가
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 변경 검증 추가
+ * 2026-09-11        HanWon.Jang        모임 독후감 삭제 중도하차 처리 순서 검증 추가
  */
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
@@ -279,7 +280,7 @@ class ReportServiceImplTest {
     /**
      * 독후감 삭제 시 외래키 참조 데이터가 부모 독후감보다 먼저 삭제되는지 검증함
      *
-     * @author SeungHyeon.Kang
+     * @author HanWon.Jang
      */
     @Test
     void delReportRefsFirst() {
@@ -293,6 +294,8 @@ class ReportServiceImplTest {
         assertEquals(200, result.getCode());
         // 외래키와 공용 대상 데이터를 정리하는 호출 순서를 검증할 객체를 생성함
         InOrder deleteOrder = inOrder(reportMapper);
+        // 연결 독후감 삭제 전에 회차 참여 기록이 중도하차로 확정되는지 확인함
+        deleteOrder.verify(reportMapper).uptClubReadingDropout(any(ReportDto.class));
         // 댓글 대상 좋아요가 댓글보다 먼저 삭제되는지 확인함
         deleteOrder.verify(reportMapper).delReportReplyLikes(any(ReportDto.class));
         // 대댓글이 최상위 댓글보다 먼저 삭제되는지 확인함

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.our.sadari.book.mapper.BookMapper;
 import org.our.sadari.global.common.constant.Constant;
 import org.our.sadari.global.common.dto.PageDto;
+import org.our.sadari.global.common.exception.CustomException;
 import org.our.sadari.global.common.code.util.CodeUtil;
 import org.our.sadari.global.common.result.ResultData;
 import org.our.sadari.global.common.service.BadWordDetectionService;
@@ -34,6 +35,7 @@ import org.our.sadari.social.dto.SocialDto;
 import org.our.sadari.social.mapper.SocialMapper;
 import org.our.sadari.user.dto.UserSettingDto;
 import org.our.sadari.user.mapper.UserMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2026-08-15        SeungHyeon.Kang    공개 독후감 조회·정렬 추가
  * 2026-08-21        SeungHyeon.Kang    독후감별 좋아요·댓글 알림 설정 추가
  * 2026-09-07        SeungHyeon.Kang    독후감 작성 언어와 공개 번역 가능 여부 반영
+ * 2026-09-11        HanWon.Jang        진행 중인 모임 독후감 삭제 시 중도하차 처리 추가
  */
 @Service
 @RequiredArgsConstructor
@@ -1382,10 +1385,11 @@ public class ReportServiceImpl implements ReportService {
      * 로그인 사용자의 독후감을 삭제함
      * 사용자 번호와 독후감 번호를 함께 조건으로 사용해 본인 독후감만 삭제되도록 함
      *
-     * @author SeungHyeon.Kang
+     * @author HanWon.Jang
      * @param userNumb 로그인 사용자 번호
      * @param reptNumb 삭제할 독후감 번호
      * @return 삭제 처리 결과
+     * @throws CustomException 독후감 삭제가 거절된 경우 발생
      */
     @Override
     @Transactional
@@ -1403,6 +1407,8 @@ public class ReportServiceImpl implements ReportService {
         // ReptNumb 업무 값을 reportDto DTO에 설정함
         reportDto.setReptNumb(reptNumb);
 
+        // 진행 중인 모임 회차의 연결 독후감이면 참여 기록을 중도하차로 확정함
+        reportMapper.uptClubReadingDropout(reportDto);
         // 댓글을 제거하기 전에 댓글과 답글을 대상으로 등록된 공용 좋아요를 정리함
         reportMapper.delReportReplyLikes(reportDto);
         // 자기 참조 외래키에 막히지 않도록 최상위 댓글보다 대댓글을 먼저 정리함
@@ -1415,7 +1421,7 @@ public class ReportServiceImpl implements ReportService {
         // 삭제 반영 건수가 없으면 본인 독후감이 아니거나 이미 삭제된 데이터로 판단함
         if (reportMapper.delReport(reportDto) == 0) {
             // "삭제에 실패했어요.\n다시 시도해주세요."
-            return ResultData.fail(ResultEnum.COMMON_DELETE_REJECTED);
+            throw new CustomException(ResultEnum.COMMON_DELETE_REJECTED, HttpStatus.BAD_REQUEST);
         }
 
 

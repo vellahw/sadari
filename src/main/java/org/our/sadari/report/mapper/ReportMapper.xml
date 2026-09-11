@@ -306,6 +306,7 @@
         <bind name="commNo" value="@org.our.sadari.global.common.constant.Constant@COMM_NO" />
         <bind name="likeTargetReport" value="@org.our.sadari.global.common.constant.Constant@LIKE_TARGET_REPORT" />
         <bind name="userStatActive" value="@org.our.sadari.global.common.constant.Constant@USER_STAT_ACTIVE" />
+        <bind name="memberActive" value="'ACTIVE'" />
         <bind name="roundReading" value="'READING'" />
         SELECT /* getReportDtl */
                A.REPT_NUMB
@@ -326,6 +327,26 @@
                     THEN TRUE
                     ELSE FALSE
                 END AS REPT_STDT_LOCKED
+             , CASE WHEN EXISTS ( SELECT 1
+                                    FROM TB_CLPART PART
+                              INNER JOIN TM_CLRNDX ROUNDX
+                                      ON ROUNDX.CLUB_NUMB = PART.CLUB_NUMB
+                                     AND ROUNDX.ROND_NUMB = PART.ROND_NUMB
+                              INNER JOIN TB_CLMEMX MEMBER
+                                      ON MEMBER.CLUB_NUMB = PART.CLUB_NUMB
+                                     AND MEMBER.USER_NUMB = PART.USER_NUMB
+                              INNER JOIN TM_USERXM USERX
+                                      ON USERX.USER_NUMB = PART.USER_NUMB
+                                   WHERE PART.REPT_NUMB = A.REPT_NUMB
+                                     AND PART.USER_NUMB = A.USER_NUMB
+                                     AND PART.GOAL_YSNO IS NULL
+                                     AND ROUNDX.ROND_STAT = #{roundReading}
+                                     AND MEMBER.MEMB_STAT = #{memberActive}
+                                     AND USERX.USER_STAT = #{userStatActive}
+                                )
+                    THEN TRUE
+                    ELSE FALSE
+                END AS CLUB_READING_REPORT
              , A.REPT_ENDT
              , A.REPT_GRDE
              , A.REPT_COLR
@@ -847,6 +868,36 @@
         </set>
          WHERE REPT_NUMB = #{reptNumb}
            AND USER_NUMB = #{userNumb}
+    </update>
+
+    <!-- 진행 중인 모임 회차의 연결 독후감 삭제 전 참여 기록을 중도하차로 확정함 -->
+    <update id="uptClubReadingDropout" parameterType="org.our.sadari.report.dto.ReportDto">
+        <bind name="commNo" value="@org.our.sadari.global.common.constant.Constant@COMM_NO" />
+        <bind name="memberActive" value="'ACTIVE'" />
+        <bind name="roundReading" value="'READING'" />
+        <bind name="userActive" value="@org.our.sadari.global.common.constant.Constant@USER_STAT_ACTIVE" />
+        UPDATE /* uptClubReadingDropout */
+               TB_CLPART PART
+          JOIN TM_CLRNDX ROUNDX
+            ON ROUNDX.CLUB_NUMB = PART.CLUB_NUMB
+           AND ROUNDX.ROND_NUMB = PART.ROND_NUMB
+          JOIN TB_CLMEMX MEMBER
+            ON MEMBER.CLUB_NUMB = PART.CLUB_NUMB
+           AND MEMBER.USER_NUMB = PART.USER_NUMB
+          JOIN TM_USERXM USERX
+            ON USERX.USER_NUMB = PART.USER_NUMB
+          JOIN TM_REPORT REPORT
+            ON REPORT.REPT_NUMB = PART.REPT_NUMB
+           AND REPORT.USER_NUMB = PART.USER_NUMB
+           SET PART.GOAL_YSNO = #{commNo}
+             , PART.ACHV_DATE = NULL
+             , PART.UPDT_DATE = CURRENT_TIMESTAMP(6)
+         WHERE PART.REPT_NUMB = #{reptNumb}
+           AND PART.USER_NUMB = #{userNumb}
+           AND PART.GOAL_YSNO IS NULL
+           AND ROUNDX.ROND_STAT = #{roundReading}
+           AND MEMBER.MEMB_STAT = #{memberActive}
+           AND USERX.USER_STAT = #{userActive}
     </update>
 
     <!-- 로그인 사용자의 독후감에 연결된 댓글과 답글의 좋아요를 삭제함 -->

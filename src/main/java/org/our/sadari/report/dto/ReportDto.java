@@ -26,6 +26,7 @@ import org.our.sadari.book.dto.BookDto;
  * 2026-08-21        SeungHyeon.Kang    독후감별 알림 설정 응답 추가
  * 2026-08-31        HanWon.Jang        모임 독서 기간 중 시작일 수정 잠금 응답 추가
  * 2026-09-07        HanWon.Jang        독후감 번역 표시 정보 추가
+ * 2026-09-11        HanWon.Jang        진행 중인 모임 회차 연결 여부 응답 추가
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -59,6 +60,9 @@ public class ReportDto extends BookDto {
 
     @Schema(description = "모임 독서 기간 중 독서 시작일 수정 잠금 여부", example = "true")
     private Boolean reptStdtLocked;
+
+    @Schema(description = "진행 중인 모임 회차의 자동 생성 독후감 여부", example = "true")
+    private Boolean clubReadingReport;
 
     @Schema(description = "독서 종료일", example = "2026-07-23")
     @NotBlank
