@@ -9,6 +9,8 @@ export const countButton = style({
   backgroundColor: "transparent",
   lineHeight: 1,
   cursor: "pointer",
+  fontFamily: vars.font.body,
+  fontSize: '12px',
   selectors: {
     "&:focus-visible": { outline: `2px solid ${vars.color.brand}`, outlineOffset: 2 },
   },
