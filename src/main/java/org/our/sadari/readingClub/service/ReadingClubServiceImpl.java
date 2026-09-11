@@ -54,7 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2026-09-03        HanWon.Jang        사용자 차단 관계의 신규 참여 제한 추가
  * 2026-09-04        SeungHyeon.Kang    모임 채팅 읽음 수·강제 퇴장 이력 처리 추가
  * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
- * 2026-09-11        HanWon.Jang        모임 독서 등록 기본값 처리
+ * 2026-09-11        HanWon.Jang        모임 독서 등록 기본값·모임원 본인 여부 처리
  */
 @Service
 @RequiredArgsConstructor
@@ -687,6 +687,8 @@ public class ReadingClubServiceImpl implements ReadingClubService {
 
         // 활성 계정인 활성 모임원과 프로필 이미지 경로를 조회함
         List<ReadingClubDto.MemberProfileDto> members = readingClubMapper.getClubMemberList(clubNumb);
+        // 로그인 사용자와 각 모임원의 일치 여부
+        members.forEach(member -> member.setMineYsno(userNumb.equals(member.getUserNumb()) ? "Y" : "N"));
         // 접근 가능한 모임원 프로필 목록을 반환함
         return ResultData.success(members);
     }

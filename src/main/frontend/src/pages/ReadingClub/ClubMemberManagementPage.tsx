@@ -41,7 +41,7 @@ type CandidateRowProps = {
  * @param onInvite 회원 초대 함수
  * @return 초대 후보 선택 항목
  */
-function CandidateRow({ candidate, disabled, onInvite }: CandidateRowProps) {
+const CandidateRow = ({ candidate, disabled, onInvite }: CandidateRowProps) => {
   /**
    * 현재 후보에게 모임 초대를 발송함
    *
@@ -79,7 +79,7 @@ function CandidateRow({ candidate, disabled, onInvite }: CandidateRowProps) {
       </ActionButton>
     </article>
   );
-}
+};
 
 /**
  * 모임장의 가입 신청 확인과 활성 멤버 관리 화면을 표시함
@@ -87,7 +87,7 @@ function CandidateRow({ candidate, disabled, onInvite }: CandidateRowProps) {
  * @author Hanwon.Jang
  * @return 멤버와 가입 신청 관리 화면
  */
-export default function ClubMemberManagementPage() {
+const ClubMemberManagementPage = () => {
   const {
     applications,
     candidates,
@@ -173,14 +173,18 @@ export default function ClubMemberManagementPage() {
     return (
       <article className={styles.profileCard} key={application.applNumb}>
         {/* 가입 신청자 프로필 영역 */}
-        <div className={styles.profileSummary}>
+        <Link
+          className={styles.profileSummary}
+          to={`/social/profile/${application.userNumb}`}
+          aria-label={message("frontend.profile.view", [application.userNick ?? "-"])}
+        >
           <ProfileImage
             className={styles.avatar}
             src={application.porfPath}
             alt={application.userNick ?? ""}
           />
           <strong className={styles.profileName}>{application.userNick ?? "-"}</strong>
-        </div>
+        </Link>
 
         {/* 가입 신청 답변 확인 영역 */}
         <button className={styles.answerButton} type="button" onClick={handleOpen}>
@@ -217,14 +221,18 @@ export default function ClubMemberManagementPage() {
     return (
       <article className={styles.profileCard} key={member.userNumb}>
         {/* 활성 모임원 프로필 영역 */}
-        <div className={styles.profileSummary}>
+        <Link
+          className={styles.profileSummary}
+          to={member.mineYsno === "Y" ? "/mypage/profile" : `/social/profile/${member.userNumb}`}
+          aria-label={message("frontend.profile.view", [member.userNick ?? "-"])}
+        >
           <ProfileImage
             className={styles.avatar}
             src={member.porfPath}
             alt={member.userNick ?? ""}
           />
           <strong className={styles.profileName}>{member.userNick ?? "-"}</strong>
-        </div>
+        </Link>
 
         {/* 일반 멤버 퇴장 관리 진입 영역 */}
         {member.membRole !== "OWNER" ? (
@@ -560,4 +568,6 @@ export default function ClubMemberManagementPage() {
       ) : null}
     </>
   );
-}
+};
+
+export default ClubMemberManagementPage;

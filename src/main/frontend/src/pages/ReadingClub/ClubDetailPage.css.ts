@@ -440,6 +440,23 @@ export const memberProfileItem = style({
   height: 36,
 });
 
+export const memberProfileLink = style({
+  display: "block",
+  width: "100%",
+  height: "100%",
+  borderRadius: "50%",
+  transition: "filter 160ms ease",
+  selectors: {
+    "&:hover": {
+      filter: "brightness(0.94)",
+    },
+    "&:focus-visible": {
+      outline: `2px solid ${vars.color.brandText}`,
+      outlineOffset: 2,
+    },
+  },
+});
+
 export const memberProfilesOverlapped = style({
 });
 

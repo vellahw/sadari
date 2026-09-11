@@ -37,6 +37,7 @@ import org.our.sadari.report.dto.ReportDto;
  * 2026-09-01        HanWon.Jang        공개 모임 이전 독서 기록 권한 추가
  * 2026-09-04        SeungHyeon.Kang    모임 채팅 읽음 수·강제 퇴장 이력 DTO 추가
  * 2026-09-10        HanWon.Jang        채팅 열람과 알림 읽음 동기화
+ * 2026-09-11        HanWon.Jang        모임원 본인 여부 추가
  */
 @Schema(description = "독서 모임 API DTO 컨테이너", hidden = true)
 public final class ReadingClubDto {
@@ -506,6 +507,9 @@ public final class ReadingClubDto {
 
         @Schema(description = "모임 내 역할", allowableValues = {"OWNER", "MEMBER"})
         private String membRole;
+
+        @Schema(description = "로그인 사용자 본인 여부", allowableValues = {"Y", "N"})
+        private String mineYsno;
     }
 
     /** 모임원이 전송할 채팅 본문과 중복 방지 키를 전달함 */

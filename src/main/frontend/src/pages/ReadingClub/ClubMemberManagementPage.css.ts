@@ -65,6 +65,19 @@ export const profileSummary = style({
   minWidth: 0,
   alignItems: "center",
   gap: 10,
+  borderRadius: 12,
+  color: "inherit",
+  textDecoration: "none",
+  transition: "filter 160ms ease",
+  selectors: {
+    "&:hover": {
+      filter: "brightness(0.82)",
+    },
+    "&:focus-visible": {
+      outline: `2px solid ${vars.color.brandText}`,
+      outlineOffset: 3,
+    },
+  },
 });
 
 export const avatar = style({

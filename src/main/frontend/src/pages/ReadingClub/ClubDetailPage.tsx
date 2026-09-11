@@ -19,7 +19,7 @@ import {getReadingDeadline} from "@/features/ReadingClub/utils/readingClubDeadli
 import clsx from "clsx";
 import type {ChangeEvent} from "react";
 import {createPortal} from "react-dom";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import * as styles from "./ClubDetailPage.css";
 
 /**
@@ -455,12 +455,18 @@ const ClubDetailPage = () => {
                     {memberProfiles.map((member) => (
                       <li className={styles.memberProfileItem} key={member.userNumb}>
                         {/* 모임원 프로필 이미지 영역 */}
-                        <ProfileImage
-                          className={styles.memberProfileImage}
-                          src={member.porfPath}
-                          alt={member.userNick ?? ""}
-                          title={member.userNick}
-                        />
+                        <Link
+                          className={styles.memberProfileLink}
+                          to={member.mineYsno === "Y" ? "/mypage/profile" : `/social/profile/${member.userNumb}`}
+                          aria-label={message("frontend.profile.view", [member.userNick ?? "-"])}
+                        >
+                          <ProfileImage
+                            className={styles.memberProfileImage}
+                            src={member.porfPath}
+                            alt=""
+                            title={member.userNick}
+                          />
+                        </Link>
                       </li>
                     ))}
                   </ul>

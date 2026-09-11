@@ -140,6 +140,7 @@ export type ClubMemberProfile = {
   userNick?: string;
   porfPath?: string;
   membRole: "OWNER" | "MEMBER";
+  mineYsno: "Y" | "N";
 };
 
 export type ClubMemberExit = {
