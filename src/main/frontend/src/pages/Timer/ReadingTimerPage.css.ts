@@ -574,7 +574,7 @@ export const timerSettingStepper = style({
   overflow: "hidden",
   border: `1px solid ${vars.color.gray300}`,
   borderRadius: "10px",
-  backgroundColor: "#fafafa",
+  backgroundColor: vars.color.gray100,
   transition: "background-color 160ms ease, box-shadow 160ms ease",
   selectors: {
     "&:focus-within": {
@@ -605,7 +605,7 @@ export const timerSettingInput = style({
   padding: 0,
   border: 0,
   outline: 0,
-  backgroundColor: "transparent",
+  backgroundColor: "#fff",
   color: vars.color.black,
   fontFamily: vars.font.heading,
   fontSize: "22px",
